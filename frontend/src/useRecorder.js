@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
 
-export function useRecorder() {
+export function useRecorder(patientId = null) {
   const [recording, setRecording] = useState(false);
   const [loading, setLoading] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [note, setNote] = useState(null);
+  const [noteError, setNoteError] = useState(null);
   const [timer, setTimer] = useState(0);
   const [processingStep, setProcessingStep] = useState(0);
+  const [recordingId, setRecordingId] = useState(null);
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -105,6 +107,9 @@ export function useRecorder() {
     try {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
+      if (patientId) {
+        formData.append('patientId', patientId);
+      }
 
       console.log('Uploading audio to backend...');
       console.log('Form data keys:', Array.from(formData.keys()));
@@ -128,6 +133,8 @@ export function useRecorder() {
       if (data.success) {
         setProcessingStep(2);
         setTranscript(data.transcript);
+        setRecordingId(data.recordingId);
+        setNoteError(data.noteError || null);
         
         setTimeout(() => {
           setProcessingStep(3);
@@ -151,8 +158,10 @@ export function useRecorder() {
     loading,
     transcript,
     note,
+    noteError,
     timer,
     processingStep,
+    recordingId,
     start: startRecording,
     stop: stopRecording,
   };

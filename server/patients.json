@@ -1,0 +1,20 @@
+{
+  "patient_1": {
+    "_id": "patient_1",
+    "firstName": "Test",
+    "lastName": "Patient",
+    "age": 45,
+    "gender": "Male",
+    "contactInfo": {
+      "phone": "",
+      "email": ""
+    },
+    "medicalInfo": {
+      "medicalHistory": "",
+      "allergies": [],
+      "currentMedications": []
+    },
+    "notes": "",
+    "createdAt": "2026-03-23T19:01:32.920Z"
+  }
+}

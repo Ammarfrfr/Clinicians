@@ -3,13 +3,12 @@ import mongoose from 'mongoose';
 const recordingSchema = new mongoose.Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+      type: String, // Allow string IDs (like 'anonymous') or ObjectId strings
+      required: false,
+      default: 'anonymous',
     },
     patientId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Patient',
+      type: String, // Store as string to match patient IDs from file-based storage
       required: false, // Optional - might not always have a patient linked
     },
     audioFile: {
@@ -22,25 +21,34 @@ const recordingSchema = new mongoose.Schema(
     },
     transcript: {
       text: String,
+      labeledText: String, // Speaker-labeled version
+      utterances: [
+        {
+          speaker: String,
+          text: String,
+        }
+      ],
       language: String, // e.g., 'en', 'hi'
       confidence: Number, // 0-1, confidence score from Whisper
       processingTime: Number, // milliseconds
+      hasSpokenLabels: Boolean,
     },
     clinicalNote: {
       chief_complaint: String,
       history: String,
       examination: String,
       diagnosis: String,
-      prescription: [
-        {
-          drug: String,
-          dose: String,
-          frequency: String,
-          duration: String,
-        },
-      ],
+      prescription: mongoose.Schema.Types.Mixed, // Accept both string and array
       followup: String,
       notes: String,
+    },
+    vitals: {
+      systolic: Number,
+      diastolic: Number,
+      hr: Number, // Heart rate in bpm
+      spo2: Number, // SpO2 percentage
+      temp: Number, // Temperature in °F
+      weight: Number, // Weight in kg
     },
     metadata: {
       recordedAt: Date, // When the audio was recorded (from client)

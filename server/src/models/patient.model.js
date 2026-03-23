@@ -5,23 +5,25 @@ const patientSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Optional for now - can add auth later
+      default: null,
     },
-    personalInfo: {
-      name: String,
-      age: Number,
-      gender: String,
-      mrn: String, // Medical Record Number
+    firstName: String,
+    lastName: String,
+    age: Number,
+    gender: String,
+    contactInfo: {
       phone: String,
       email: String,
     },
     medicalInfo: {
+      medicalHistory: String,
       bloodGroup: String,
       height: Number, // in cm
       weight: Number, // in kg
       allergies: [String],
+      currentMedications: [String],
       existingConditions: [String],
-      medications: [String],
     },
     consultations: [
       {
@@ -35,6 +37,6 @@ const patientSchema = new mongoose.Schema(
 );
 
 // Index for quick lookup
-patientSchema.index({ userId: 1, mrn: 1 }); // Find patient by MRN under a user
+patientSchema.index({ userId: 1 });
 
 export default mongoose.model('Patient', patientSchema);

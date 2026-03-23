@@ -3,7 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import connectDB from './src/DB/db.connection.js';
+import { syncTemporaryRecordingsToMongoDB } from './src/utils/tempRecordingStore.js';
+import Recording from './src/models/recording.model.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -11,8 +14,23 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 // Connect to MongoDB
 connectDB();
 
+// Listen for MongoDB connection events to sync temp recordings
+mongoose.connection.on('connected', async () => {
+  console.log('✅ MongoDB connection established, attempting to sync temporary recordings...');
+  try {
+    await syncTemporaryRecordingsToMongoDB(Recording);
+  } catch (err) {
+    console.error('Error syncing temporary recordings:', err.message);
+  }
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('⚠️  MongoDB disconnected, reverting to temporary storage');
+});
+
 import analyzeRoute from './src/routes/anaylyse.js';
 import recordingsRoute from './src/routes/recordings.js';
+import patientRoute from './src/routes/patient.routes.js';
 
 const app = express();
 
@@ -57,6 +75,7 @@ app.get('/api/debug', (req, res) => {
 
 app.use('/api', analyzeRoute);
 app.use('/api/recordings', recordingsRoute);
+app.use('/api/patients', patientRoute);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
