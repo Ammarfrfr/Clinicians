@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { exportNoteAsPDF, copyNoteToClipboard } from '../utils/exportPDF';
+import { generateClinicalNotePDF, downloadPDFFromHTML } from '../utils/generatePDFHTML';
 import { Modal } from './Modal';
 
 export function NotePanel({ note, noteError, loading, patient = {}, transcript = '', recordingId = null, onSave, onCancel }) {
@@ -388,15 +389,12 @@ export function NotePanel({ note, noteError, loading, patient = {}, transcript =
         primaryLabel="Export"
         secondaryLabel="Cancel"
         primaryAction={() => {
-          const result = exportNoteAsPDF(note, patient, transcript);
+          const htmlContent = generateClinicalNotePDF(note, patient, { name: 'Dr. [Name]', qualification: 'MBBS' });
+          downloadPDFFromHTML(htmlContent, `Clinical_Note_${patient.firstName || 'Patient'}_${new Date().getTime()}.pdf`);
           setShowPDFModal(false);
-          if (result.success) {
-            setSuccessMessage('PDF exported successfully!');
-          } else {
-            setSuccessMessage('Failed to export PDF. Check console for details.');
-          }
+          setSuccessMessage('PDF opened in print preview. Use your browser print function to save as PDF.');
           setShowSuccessModal(true);
-          setTimeout(() => setShowSuccessModal(false), 2000);
+          setTimeout(() => setShowSuccessModal(false), 3000);
         }}
         secondaryAction={() => setShowPDFModal(false)}
       >

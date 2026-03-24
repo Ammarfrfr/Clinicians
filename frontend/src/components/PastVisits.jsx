@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { exportNoteAsPDF, copyNoteToClipboard } from '../utils/exportPDF';
+import { generateClinicalNotePDF, downloadPDFFromHTML } from '../utils/generatePDFHTML';
 import { Modal } from './Modal';
 import './PastVisits.css';
 
@@ -434,15 +435,12 @@ export function PastVisits({ patientId, currentSessionId }) {
         secondaryLabel="Cancel"
         primaryAction={() => {
           if (selectedNoteForPdf && selectedNoteForPdf.note) {
-            const result = exportNoteAsPDF(selectedNoteForPdf.note, patientInfo, selectedNoteForPdf.labeledTranscript);
+            const htmlContent = generateClinicalNotePDF(selectedNoteForPdf.note, patientInfo, { name: 'Dr. [Name]', qualification: 'MBBS' });
+            downloadPDFFromHTML(htmlContent, `Clinical_Note_${patientInfo?.firstName || 'Patient'}_${new Date().getTime()}.pdf`);
             setSelectedNoteForPdf(null);
-            if (result.success) {
-              setSuccessMessage('PDF exported successfully!');
-            } else {
-              setSuccessMessage('Failed to export PDF. Check console for details.');
-            }
+            setSuccessMessage('PDF opened in print preview. Use your browser print function to save as PDF.');
             setShowSuccessModal(true);
-            setTimeout(() => setShowSuccessModal(false), 2000);
+            setTimeout(() => setShowSuccessModal(false), 3000);
           }
         }}
         secondaryAction={() => setSelectedNoteForPdf(null)}
