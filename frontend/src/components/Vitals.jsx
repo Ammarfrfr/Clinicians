@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiClient } from '../config.js';
 import './Vitals.css';
 
 export function Vitals({ sessionId, onVitalsSaved }) {
@@ -45,13 +46,9 @@ export function Vitals({ sessionId, onVitalsSaved }) {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:7001/api/recordings/${sessionId}/vitals`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vitals })
-      });
+      const response = await apiClient.patch(`/api/recordings/${sessionId}/vitals`, { vitals });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setSavedVitals(data.vitals);
         setMode('display');
@@ -60,8 +57,8 @@ export function Vitals({ sessionId, onVitalsSaved }) {
         alert('Error saving vitals: ' + data.error);
       }
     } catch (err) {
-      console.error('Error saving vitals:', err);
-      alert('Error saving vitals: ' + err.message);
+      console.error('Error saving vitals:', err.response?.data || err.message);
+      alert('Error saving vitals: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { apiClient } from './config.js';
 
 export function useRecorder(patientId = null) {
   const [recording, setRecording] = useState(false);
@@ -17,24 +18,19 @@ export function useRecorder(patientId = null) {
 
   const startRecording = async () => {
     try {
-      console.log('Starting recording...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      console.log('Microphone access granted');
 
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        console.log('Audio chunk received:', event.data.size, 'bytes');
         audioChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = () => {
-        console.log('Recording stopped, creating blob...');
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        console.log('Audio blob created:', audioBlob.size, 'bytes');
         sendAudioToBackend(audioBlob);
       };
 
@@ -43,14 +39,12 @@ export function useRecorder(patientId = null) {
       };
 
       mediaRecorder.start();
-      console.log('MediaRecorder started');
       setRecording(true);
       setTimer(0);
       setTranscript('');
       setNote(null);
       setProcessingStep(0);
 
-      // Start timer
       timerIntervalRef.current = setInterval(() => {
         setTimer((t) => t + 1);
       }, 1000);
@@ -61,27 +55,18 @@ export function useRecorder(patientId = null) {
   };
 
   const stopRecording = () => {
-    console.log('Stopping recording...');
-    
-    // Clear timer first
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
-      console.log('Timer cleared');
     }
 
-    // Stop MediaRecorder
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      console.log('MediaRecorder state:', mediaRecorderRef.current.state);
       mediaRecorderRef.current.stop();
-      console.log('MediaRecorder stop() called');
     }
 
-    // Close audio tracks
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
         track.stop();
-        console.log('Audio track stopped');
       });
       streamRef.current = null;
     }
@@ -92,8 +77,6 @@ export function useRecorder(patientId = null) {
   };
 
   const sendAudioToBackend = async (audioBlob) => {
-    console.log('sendAudioToBackend called with blob size:', audioBlob.size);
-    
     if (audioBlob.size === 0) {
       console.error('Audio blob is empty!');
       alert('No audio was recorded. Please try again.');
@@ -110,25 +93,14 @@ export function useRecorder(patientId = null) {
       if (patientId) {
         formData.append('patientId', patientId);
       }
-
-      console.log('Uploading audio to backend...');
-      console.log('Form data keys:', Array.from(formData.keys()));
       
-      const response = await fetch('http://localhost:7001/api/analyze', {
-        method: 'POST',
-        body: formData,
+      const response = await apiClient.post('/api/analyze', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Backend error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('Backend response:', data);
+      const data = response.data;
 
       if (data.success) {
         setProcessingStep(2);
@@ -147,8 +119,8 @@ export function useRecorder(patientId = null) {
         setLoading(false);
       }
     } catch (err) {
-      console.error('Error uploading audio:', err);
-      alert('Error: ' + err.message);
+      console.error('Error uploading audio:', err.response?.data || err.message);
+      alert('Error: ' + (err.response?.data?.error || err.message));
       setLoading(false);
     }
   };

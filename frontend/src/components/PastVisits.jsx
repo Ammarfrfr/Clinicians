@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { exportNoteAsPDF, copyNoteToClipboard } from '../utils/exportPDF';
 import { generateClinicalNotePDF, downloadPDFFromHTML } from '../utils/generatePDFHTML';
 import { Modal } from './Modal';
+import { apiClient } from '../config.js';
 import './PastVisits.css';
 
 export function PastVisits({ patientId, currentSessionId }) {
@@ -29,13 +30,13 @@ export function PastVisits({ patientId, currentSessionId }) {
 
   const fetchPatientInfo = async () => {
     try {
-      const response = await fetch(`http://localhost:7001/api/patients/${patientId}`);
-      const data = await response.json();
+      const response = await apiClient.get(`/api/patients/${patientId}`);
+      const data = response.data;
       if (data.success) {
         setPatientInfo(data.patient);
       }
     } catch (err) {
-      console.error('Error fetching patient info:', err);
+      console.error('Error fetching patient info:', err.response?.data || err.message);
     }
   };
 
@@ -44,18 +45,8 @@ export function PastVisits({ patientId, currentSessionId }) {
 
     setLoading(true);
     try {
-      const url = `http://localhost:7001/api/recordings/patients/${patientId}/sessions`;
-      console.log('Fetching sessions from:', url);
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      console.log('Sessions response:', data);
-      console.log('Sessions count:', data.sessions?.length);
-      if (data.sessions && data.sessions.length > 0) {
-        console.log('First session:', data.sessions[0]);
-        console.log('labeledTranscript exists:', !!data.sessions[0].labeledTranscript);
-        console.log('labeledTranscript preview:', data.sessions[0].labeledTranscript?.substring(0, 100));
-      }
+      const response = await apiClient.get(`/api/recordings/patients/${patientId}/sessions`);
+      const data = response.data;
       
       if (data.success && data.sessions) {
         setSessions(data.sessions);
@@ -96,11 +87,9 @@ export function PastVisits({ patientId, currentSessionId }) {
     }
 
     try {
-      const response = await fetch(`http://localhost:7001/api/recordings/${deleteConfirmSessionId}`, {
-        method: 'DELETE',
-      });
+      const response = await apiClient.delete(`/api/recordings/${deleteConfirmSessionId}`);
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setSessions((prev) => prev.filter((s) => s._id !== deleteConfirmSessionId));
         alert('Visit deleted successfully');
@@ -140,16 +129,12 @@ export function PastVisits({ patientId, currentSessionId }) {
 
     setSavingEditId(editingSessionId);
     try {
-      const response = await fetch(`http://localhost:7001/api/recordings/${editingSessionId}/note`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          clinicalNote: editedNote,
-          processingStatus: 'completed'
-        }),
+      const response = await apiClient.patch(`/api/recordings/${editingSessionId}/note`, { 
+        clinicalNote: editedNote,
+        processingStatus: 'completed'
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         // Update the session in the list
         setSessions(prev => prev.map(s => 
@@ -388,12 +373,25 @@ export function PastVisits({ patientId, currentSessionId }) {
                 {session.labeledTranscript && (
                   <div className="detail-section">
                     <h4>Transcript</h4>
-                    <div className="transcript-content">
-                      {session.labeledTranscript.split('\n').map((line, idx) => (
-                        <div key={idx} className="transcript-line">
-                          {line}
-                        </div>
-                      ))}
+                    <div className="transcript-content" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                      {session.labeledTranscript.replace(/(Patient:|Doctor:|Orthopedic Surgeon:)/gi, '\n$1').split('\n').map(l => l.trim()).filter(l => l.length > 0).map((line, idx) => {
+                        const isDoctor = line.toLowerCase().startsWith('doctor');
+                        const isPatient = line.toLowerCase().startsWith('patient');
+                        return (
+                          <div key={idx} className="transcript-line" style={{ marginBottom: '8px' }}>
+                            {(isDoctor || isPatient) && line.includes(':') ? (
+                              <>
+                                <strong style={{ color: isDoctor ? '#4f46e5' : '#e11d48', marginRight: '6px' }}>
+                                  {line.substring(0, line.indexOf(':') + 1)}
+                                </strong>
+                                <span>{line.substring(line.indexOf(':') + 1)}</span>
+                              </>
+                            ) : (
+                              line
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

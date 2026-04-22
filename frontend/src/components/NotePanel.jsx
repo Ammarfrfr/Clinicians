@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { exportNoteAsPDF, copyNoteToClipboard } from '../utils/exportPDF';
 import { generateClinicalNotePDF, downloadPDFFromHTML } from '../utils/generatePDFHTML';
 import { Modal } from './Modal';
+import { apiClient } from '../config.js';
 
 export function NotePanel({ note, noteError, loading, patient = {}, transcript = '', recordingId = null, onSave, onCancel }) {
   const [saving, setSaving] = useState(false);
@@ -47,17 +48,13 @@ export function NotePanel({ note, noteError, loading, patient = {}, transcript =
 
     setSaving(true);
     try {
-      const response = await fetch(`http://localhost:7001/api/recordings/${recordingId}/note`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          clinicalNote: note,
-          vitals: vitals,
-          processingStatus: 'completed'
-        }),
+      const response = await apiClient.patch(`/api/recordings/${recordingId}/note`, { 
+        clinicalNote: note,
+        vitals: vitals,
+        processingStatus: 'completed'
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         alert('✅ Recording saved successfully!');
         setShowVitalsModal(false);
@@ -66,8 +63,8 @@ export function NotePanel({ note, noteError, loading, patient = {}, transcript =
         alert('Error saving: ' + data.error);
       }
     } catch (err) {
-      console.error('Error saving recording:', err);
-      alert('Error saving: ' + err.message);
+      console.error('Error saving recording:', err.response?.data || err.message);
+      alert('Error saving: ' + (err.response?.data?.error || err.message));
     } finally {
       setSaving(false);
     }
@@ -85,16 +82,12 @@ export function NotePanel({ note, noteError, loading, patient = {}, transcript =
 
     setSaving(true);
     try {
-      const response = await fetch(`http://localhost:7001/api/recordings/${recordingId}/note`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          clinicalNote: note,
-          processingStatus: 'completed'
-        }),
+      const response = await apiClient.patch(`/api/recordings/${recordingId}/note`, { 
+        clinicalNote: note,
+        processingStatus: 'completed'
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         alert('✅ Recording saved successfully!');
         setShowVitalsModal(false);
@@ -103,8 +96,8 @@ export function NotePanel({ note, noteError, loading, patient = {}, transcript =
         alert('Error saving: ' + data.error);
       }
     } catch (err) {
-      console.error('Error saving recording:', err);
-      alert('Error saving: ' + err.message);
+      console.error('Error saving recording:', err.response?.data || err.message);
+      alert('Error saving: ' + (err.response?.data?.error || err.message));
     } finally {
       setSaving(false);
     }
@@ -145,16 +138,12 @@ export function NotePanel({ note, noteError, loading, patient = {}, transcript =
 
     setSaving(true);
     try {
-      const response = await fetch(`http://localhost:7001/api/recordings/${recordingId}/note`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          clinicalNote: editedNote,
-          processingStatus: 'completed'
-        }),
+      const response = await apiClient.patch(`/api/recordings/${recordingId}/note`, { 
+        clinicalNote: editedNote,
+        processingStatus: 'completed'
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setSuccessMessage('Clinical note updated successfully!');
         setShowSuccessModal(true);
@@ -164,8 +153,8 @@ export function NotePanel({ note, noteError, loading, patient = {}, transcript =
         alert('Error saving: ' + data.error);
       }
     } catch (err) {
-      console.error('Error saving note:', err);
-      alert('Error saving: ' + err.message);
+      console.error('Error saving note:', err.response?.data || err.message);
+      alert('Error saving: ' + (err.response?.data?.error || err.message));
     } finally {
       setSaving(false);
     }

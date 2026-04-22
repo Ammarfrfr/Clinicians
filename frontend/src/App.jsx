@@ -8,6 +8,7 @@ import { Vitals } from './components/Vitals';
 import { PastVisits } from './components/PastVisits';
 import { AddPatientModal } from './AddPatientModal';
 import { EditPatientModal } from './EditPatientModal';
+import { apiClient } from './config.js';
 import { useRecorder } from './useRecorder';
 import './App.css';
 
@@ -55,8 +56,8 @@ function App() {
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:7001/api/patients');
-      const data = await response.json();
+      const response = await apiClient.get('/api/patients');
+      const data = response.data;
       if (data.success && data.patients) {
         setPatients(data.patients);
         if (data.patients.length > 0 && !activePatientId) {
@@ -64,7 +65,7 @@ function App() {
         }
       }
     } catch (err) {
-      console.error('Error fetching patients:', err);
+      console.error('Error fetching patients:', err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -95,10 +96,8 @@ function App() {
     if (!window.confirm('Are you sure you want to delete this patient?')) return;
     
     try {
-      const response = await fetch(`http://localhost:7001/api/patients/${patientId}`, {
-        method: 'DELETE',
-      });
-      const data = await response.json();
+      const response = await apiClient.delete(`/api/patients/${patientId}`);
+      const data = response.data;
       if (data.success) {
         setPatients(patients.filter((p) => p._id !== patientId));
         if (activePatientId === patientId) {
@@ -125,8 +124,7 @@ function App() {
   };
 
   const handleSaveNote = (savedRecording) => {
-    console.log('Note saved successfully:', savedRecording);
-    // Note is already saved, just show confirmation
+    // Note is already saved to database
   };
 
   const handleCancelNote = () => {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiClient } from './config.js';
 
 export function EditPatientModal({ isOpen, onClose, onSave, patient }) {
   const [formData, setFormData] = useState({
@@ -37,16 +38,12 @@ export function EditPatientModal({ isOpen, onClose, onSave, patient }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:7001/api/patients/${patient._id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          allergies: formData.allergies.split(',').map((a) => a.trim()).filter(Boolean),
-        }),
+      const response = await apiClient.patch(`/api/patients/${patient._id}`, {
+        ...formData,
+        allergies: formData.allergies.split(',').map((a) => a.trim()).filter(Boolean),
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         onSave(data.patient);
         onClose();
@@ -54,8 +51,8 @@ export function EditPatientModal({ isOpen, onClose, onSave, patient }) {
         alert('Error: ' + data.error);
       }
     } catch (err) {
-      console.error('Error updating patient:', err);
-      alert('Error updating patient: ' + err.message);
+      console.error('Error updating patient:', err.response?.data || err.message);
+      alert('Error updating patient: ' + (err.response?.data?.error || err.message));
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiClient } from './config.js';
 
 export function AddPatientModal({ isOpen, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -21,16 +22,12 @@ export function AddPatientModal({ isOpen, onClose, onSave }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:7001/api/patients/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          allergies: formData.allergies.split(',').map((a) => a.trim()).filter(Boolean),
-        }),
+      const response = await apiClient.post('/api/patients/create', {
+        ...formData,
+        allergies: formData.allergies.split(',').map((a) => a.trim()).filter(Boolean),
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         onSave(data.patient);
         setFormData({
@@ -49,8 +46,8 @@ export function AddPatientModal({ isOpen, onClose, onSave }) {
         alert('Error: ' + data.error);
       }
     } catch (err) {
-      console.error('Error saving patient:', err);
-      alert('Error saving patient: ' + err.message);
+      console.error('Error saving patient:', err.response?.data || err.message);
+      alert('Error saving patient: ' + (err.response?.data?.error || err.message));
     }
   };
 
