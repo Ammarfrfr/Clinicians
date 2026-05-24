@@ -6,6 +6,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import configurePassport from './middlewares/passport.js';
+import mongoose from 'mongoose';
 
 const app = express();
 
@@ -37,6 +38,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.status(200).json({
+    status: 'OK',
+    uptime: process.uptime(),
+    timestamp: new Date(),
+    database: dbStatus,
+  });
+});
 
 // Routes import
 import authRoute from './routes/auth.routes.js';

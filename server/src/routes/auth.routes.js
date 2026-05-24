@@ -6,6 +6,13 @@ import { register, login, getCurrentUser, logout, completeOnboarding } from '../
 
 const router = Router();
 
+// Helper to resolve frontend redirect URL
+const getFrontendUrl = () => {
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+  if (process.env.CORS && process.env.CORS !== '*') return process.env.CORS;
+  return 'http://localhost:5173';
+};
+
 // Helper to check if Google OAuth is configured
 const isGoogleConfigured = () => {
   return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
@@ -14,7 +21,7 @@ const isGoogleConfigured = () => {
 // Google OAuth
 router.get('/google', (req, res, next) => {
   if (!isGoogleConfigured()) {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = getFrontendUrl();
     return res.redirect(`${frontendUrl}/login?error=google_not_configured`);
   }
   passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
@@ -22,7 +29,7 @@ router.get('/google', (req, res, next) => {
 
 router.get('/google/callback', (req, res, next) => {
   if (!isGoogleConfigured()) {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = getFrontendUrl();
     return res.redirect(`${frontendUrl}/login?error=google_not_configured`);
   }
   passport.authenticate('google', { session: false })(req, res, next);
@@ -55,7 +62,7 @@ router.get('/google/callback', (req, res, next) => {
       maxAge: getExpiryMs(process.env.JWT_SECRET_EXPIRY),
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = getFrontendUrl();
     res.redirect(`${frontendUrl}/?token=${token}`);
   },
 );
