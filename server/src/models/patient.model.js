@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-const patientSchema = new mongoose.Schema(
+const patientSchema = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -31,12 +31,24 @@ const patientSchema = new mongoose.Schema(
         ref: 'Recording',
       },
     ],
+    files: [
+      {
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
+        category: { type: String, default: 'General' }, // 'MRI', 'X-ray', 'Surgery', etc.
+        notes: String,
+        uploadedAt: { type: Date, default: Date.now },
+      }
+    ],
     notes: String, // General notes about the patient
   },
   { timestamps: true }
 );
 
-// Index for quick lookup
+// Indexes for quick lookup and search
 patientSchema.index({ userId: 1 });
+patientSchema.index({ firstName: 1, lastName: 1 });
+patientSchema.index({ 'contactInfo.phone': 1 });
+patientSchema.index({ 'contactInfo.email': 1 });
 
-export default mongoose.model('Patient', patientSchema);
+export const Patient = mongoose.model('Patient', patientSchema);

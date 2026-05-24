@@ -1,4 +1,20 @@
-export function generateClinicalNotePDF(note, patient = {}, doctor = {}) {
+export function generateClinicalNotePDF(note, patient = {}, doctor = {}, includeSections = null, options = {}) {
+  // Default: include all sections
+  const sections = includeSections || {
+    notes: true,
+    chief_complaint: true,
+    history: true,
+    examination: true,
+    diagnosis: true,
+    prescription: true,
+    followup: true,
+    vitals: true,
+  };
+  
+  const { physicalLetterhead = false } = options;
+  const docName = doctor?.profile?.name || doctor?.name || 'Dr. Clinician';
+  const docQual = doctor?.profile?.qualification || doctor?.qualification || 'MBBS';
+
   const currentDate = new Date();
   const formattedDate = currentDate.toLocaleDateString('en-IN', {
     day: 'numeric',
@@ -111,6 +127,10 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
 <body>
 <div class="page">
 
+  ${
+    physicalLetterhead
+      ? `<div class="doc-header-spacer" style="height: 180px;"></div>`
+      : `
   <div class="doc-header">
     <div>
       <div class="doc-logo">Qalam<span>.</span></div>
@@ -119,12 +139,14 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
     <div class="doc-meta">
       <div class="doc-meta-row"><strong>Date</strong> &nbsp; ${formattedDate}</div>
       <div class="doc-meta-row"><strong>Time</strong> &nbsp; ${formattedTime}</div>
-      <div class="doc-meta-row"><strong>Doctor</strong> &nbsp; ${escapeHtml(doctor.name || 'Dr. [Name]')}</div>
+      <div class="doc-meta-row"><strong>Doctor</strong> &nbsp; ${escapeHtml(docName)}</div>
       <div class="doc-badge">AI Generated · Doctor Reviewed</div>
     </div>
   </div>
+  `
+  }
 
-  <div class="patient-strip">
+  <div class="patient-strip" style="${physicalLetterhead ? 'background: transparent; border-top: 1px solid #e8e5de;' : ''}">
     <div>
       <div class="pfield-lbl">Patient</div>
       <div class="pfield-val">${escapeHtml(patient.firstName || 'Unknown')} ${escapeHtml(patient.lastName || '')}</div>
@@ -143,7 +165,7 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
   </div>
 
   ${
-    note.vitals && Object.keys(note.vitals).length > 0
+    sections.vitals && note.vitals && Object.keys(note.vitals).length > 0
       ? `
   <div class="vitals-strip">
     ${note.vitals.systolic ? `<div class="vital"><div class="vital-lbl">BP</div><div class="vital-val">${escapeHtml(note.vitals.systolic)}/<span class="vital-unit">${escapeHtml(note.vitals.diastolic || '0')} mmHg</span></div><div class="vital-flag ${note.vitals.systolic > 130 ? 'vf-high' : 'vf-normal'}">${note.vitals.systolic > 130 ? 'Elevated' : 'Normal'}</div></div>` : '<div class="vital hidden-vitals"></div>'}
@@ -159,7 +181,16 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
   <div class="doc-body">
 
     ${
-      note.chief_complaint
+      sections.notes && note.notes
+        ? `<div class="section">
+      <div class="section-head"><div class="section-label">Clinical Notes / Summary</div><div class="section-line"></div></div>
+      <div class="section-body">${escapeHtml(note.notes)}</div>
+    </div>`
+        : ''
+    }
+
+    ${
+      sections.chief_complaint && note.chief_complaint
         ? `<div class="section">
       <div class="section-head"><div class="section-label">Chief Complaint</div><div class="section-line"></div></div>
       <div class="section-body">${escapeHtml(note.chief_complaint)}</div>
@@ -168,7 +199,7 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
     }
 
     ${
-      note.history
+      sections.history && note.history
         ? `<div class="section">
       <div class="section-head"><div class="section-label">History</div><div class="section-line"></div></div>
       <div class="section-body">${escapeHtml(note.history)}</div>
@@ -177,7 +208,7 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
     }
 
     ${
-      note.examination
+      sections.examination && note.examination
         ? `<div class="section">
       <div class="section-head"><div class="section-label">Examination</div><div class="section-line"></div></div>
       <div class="section-body">${escapeHtml(note.examination)}</div>
@@ -186,10 +217,10 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
     }
 
     ${
-      note.diagnosis || note.followup
+      (sections.diagnosis && note.diagnosis) || (sections.followup && note.followup)
         ? `<div class="two-col">
       ${
-        note.diagnosis
+        sections.diagnosis && note.diagnosis
           ? `<div class="dx-box">
         <div class="dx-label">Diagnosis</div>
         <div class="dx-val">${escapeHtml(note.diagnosis)}</div>
@@ -197,7 +228,7 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
           : ''
       }
       ${
-        note.followup
+        sections.followup && note.followup
           ? `<div class="fu-box">
         <div class="fu-label">Follow-up</div>
         <div class="fu-val">${escapeHtml(note.followup)}</div>
@@ -209,7 +240,7 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
     }
 
     ${
-      prescriptionRows
+      sections.prescription && prescriptionRows
         ? `<div class="section">
       <div class="section-head"><div class="section-label">Prescription</div><div class="section-line"></div></div>
       <table class="rx-table">
@@ -226,18 +257,24 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
 
   </div>
 
+  ${
+    physicalLetterhead
+      ? ''
+      : `
   <div class="doc-footer">
     <div>
       <div class="footer-sig-label">Doctor's Approval</div>
       <div class="footer-sig-line"></div>
-      <div class="footer-sig-name">${escapeHtml(doctor.name || 'Dr. [Name]')}</div>
-      <div class="footer-sig-qual">${escapeHtml(doctor.qualification || 'MBBS')}</div>
+      <div class="footer-sig-name">${escapeHtml(docName)}</div>
+      <div class="footer-sig-qual">${escapeHtml(docQual)}</div>
     </div>
     <div style="text-align:right;">
       <div class="footer-note">Generated: ${formattedDate}</div>
       <div class="footer-powered">Powered by <span>Qalam AI</span> · Doctor Reviewed</div>
     </div>
   </div>
+  `
+  }
 
 </div>
 </body>
@@ -247,14 +284,10 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
 }
 
 /**
- * Download HTML as PDF using html2pdf library
+ * Download HTML as PDF using iframe print strategy
  */
 export async function downloadPDFFromHTML(htmlContent, filename = 'clinical-note.pdf') {
   try {
-    // Create a blob from the HTML
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    
-    // Create an iframe to print the HTML
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
@@ -264,10 +297,8 @@ export async function downloadPDFFromHTML(htmlContent, filename = 'clinical-note
     doc.write(htmlContent);
     doc.close();
     
-    // Wait for fonts to load and then print
     setTimeout(() => {
       iframe.contentWindow.print();
-      // Cleanup
       setTimeout(() => {
         document.body.removeChild(iframe);
       }, 1000);

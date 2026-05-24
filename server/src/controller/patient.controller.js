@@ -1,14 +1,17 @@
-import Patient from '../models/patient.model.js';
+import { Patient } from '../models/patient.model.js';
 import { asyncHandler } from '../Utils/asyncHandler.js';
+import { ApiError } from '../Utils/ApiError.js';
+import { ApiResponse } from '../Utils/ApiResponse.js';
 
 export const createPatient = asyncHandler(async (req, res) => {
   const { firstName, lastName, age, gender, phone, email, medicalHistory, allergies, notes } = req.body;
 
   if (!firstName || !lastName) {
-    return res.status(400).json({ success: false, error: 'First name and last name are required' });
+    throw new ApiError(400, 'First name and last name are required');
   }
 
   const patient = new Patient({
+    userId: req.user._id,
     firstName,
     lastName,
     age: age || null,
@@ -23,22 +26,28 @@ export const createPatient = asyncHandler(async (req, res) => {
   });
 
   const savedPatient = await patient.save();
-  res.json({ success: true, patient: savedPatient });
+  return res
+    .status(201)
+    .json(new ApiResponse(201, savedPatient, 'Patient created successfully'));
 });
 
 export const getAllPatients = asyncHandler(async (req, res) => {
-  const patients = await Patient.find().select('-__v').sort({ createdAt: -1 });
-  res.json({ success: true, patients });
+  const patients = await Patient.find({ userId: req.user._id }).select('-__v').sort({ createdAt: -1 });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, patients, 'Patients fetched successfully'));
 });
 
 export const getPatientById = asyncHandler(async (req, res) => {
-  const patient = await Patient.findById(req.params.id);
+  const patient = await Patient.findOne({ _id: req.params.id, userId: req.user._id });
 
   if (!patient) {
-    return res.status(404).json({ success: false, error: 'Patient not found' });
+    throw new ApiError(404, 'Patient not found');
   }
   
-  res.json({ success: true, patient });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, patient, 'Patient fetched successfully'));
 });
 
 export const updatePatient = asyncHandler(async (req, res) => {
@@ -66,21 +75,56 @@ export const updatePatient = asyncHandler(async (req, res) => {
     }
   }
 
-  const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, updateData, { new: true });
+  const updatedPatient = await Patient.findOneAndUpdate(
+    { _id: req.params.id, userId: req.user._id },
+    updateData,
+    { new: true }
+  );
 
   if (!updatedPatient) {
-    return res.status(404).json({ success: false, error: 'Patient not found' });
+    throw new ApiError(404, 'Patient not found');
   }
 
-  res.json({ success: true, patient: updatedPatient });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedPatient, 'Patient updated successfully'));
 });
 
 export const deletePatient = asyncHandler(async (req, res) => {
-  const patient = await Patient.findByIdAndDelete(req.params.id);
+  const patient = await Patient.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
 
   if (!patient) {
-    return res.status(404).json({ success: false, error: 'Patient not found' });
+    throw new ApiError(404, 'Patient not found');
   }
 
-  res.json({ success: true, message: 'Patient deleted successfully' });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, 'Patient deleted successfully'));
+});
+
+export const searchPatients = asyncHandler(async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || !q.trim()) {
+    const patients = await Patient.find({ userId: req.user._id }).select('-__v').sort({ createdAt: -1 });
+    return res
+      .status(200)
+      .json(new ApiResponse(200, patients, 'Patients fetched successfully'));
+  }
+
+  const regex = new RegExp(q.trim(), 'i');
+
+  const patients = await Patient.find({
+    userId: req.user._id,
+    $or: [
+      { firstName: regex },
+      { lastName: regex },
+      { 'contactInfo.phone': regex },
+      { 'contactInfo.email': regex },
+    ],
+  }).select('-__v').sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, patients, 'Patients searched successfully'));
 });

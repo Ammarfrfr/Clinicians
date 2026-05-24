@@ -1,16 +1,20 @@
-import Recording from '../models/recording.model.js';
+import { Recording } from '../models/recording.model.js';
 import { asyncHandler } from '../Utils/asyncHandler.js';
+import { ApiError } from '../Utils/ApiError.js';
+import { ApiResponse } from '../Utils/ApiResponse.js';
 
 export const getUserRecordings = asyncHandler(async (req, res) => {
-  const recordings = await Recording.find({ userId: req.params.userId })
+  const recordings = await Recording.find({ userId: req.user._id.toString() })
     .sort({ createdAt: -1 })
     .select('transcript clinicalNote metadata processingStatus createdAt');
   
-  res.json({ success: true, data: recordings });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recordings, 'User recordings fetched successfully'));
 });
 
 export const getPatientVisits = asyncHandler(async (req, res) => {
-  const recordings = await Recording.find({ patientId: req.params.patientId })
+  const recordings = await Recording.find({ patientId: req.params.patientId, userId: req.user._id.toString() })
     .sort({ createdAt: -1 })
     .select('transcript clinicalNote metadata processingStatus createdAt vitals _id');
   
@@ -24,15 +28,23 @@ export const getPatientVisits = asyncHandler(async (req, res) => {
     vitals: r.vitals || {},
   }));
 
-  res.json({ success: true, visits });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, visits, 'Patient visits fetched successfully'));
 });
 
 export const getPatientSessions = asyncHandler(async (req, res) => {
   const { patientId } = req.params;
+  const { all } = req.query;
   
-  const recordings = await Recording.find({ patientId })
+  const filter = { patientId, userId: req.user._id.toString() };
+  if (all !== 'true') {
+    filter.isFinalized = true;
+  }
+
+  const recordings = await Recording.find(filter)
     .sort({ createdAt: -1 })
-    .select('transcript clinicalNote metadata processingStatus createdAt vitals _id');
+    .select('transcript clinicalNote metadata processingStatus createdAt vitals followUpTodos tags _id isFinalized');
   
   const sessions = recordings.map(r => ({
     _id: r._id,
@@ -43,86 +55,106 @@ export const getPatientSessions = asyncHandler(async (req, res) => {
     plainTranscript: r.transcript?.text || '',
     note: r.clinicalNote,
     vitals: r.vitals || {},
+    followUpTodos: r.followUpTodos || [],
+    tags: r.tags || [],
+    isFinalized: r.isFinalized || false,
   }));
 
-  res.json({ success: true, sessions });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, sessions, 'Patient sessions fetched successfully'));
 });
 
 export const getRecordingById = asyncHandler(async (req, res) => {
-  const recording = await Recording.findById(req.params.recordingId);
+  const recording = await Recording.findOne({ _id: req.params.recordingId, userId: req.user._id.toString() });
   
   if (!recording) {
-    return res.status(404).json({ success: false, error: 'Recording not found' });
+    throw new ApiError(404, 'Recording not found');
   }
 
-  res.json({ success: true, data: recording });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recording, 'Recording fetched successfully'));
 });
 
 export const updateRecordingNote = asyncHandler(async (req, res) => {
-  const { clinicalNote, processingStatus } = req.body;
+  const { clinicalNote, processingStatus, isFinalized } = req.body;
 
   if (!clinicalNote) {
-    return res.status(400).json({ success: false, error: 'Clinical note is required' });
+    throw new ApiError(400, 'Clinical note is required');
   }
 
-  const recording = await Recording.findByIdAndUpdate(
-    req.params.recordingId,
-    { clinicalNote, processingStatus: processingStatus || 'completed' },
-    { new: true }
+  const updateFields = { clinicalNote, processingStatus: processingStatus || 'completed' };
+  if (isFinalized !== undefined) {
+    updateFields.isFinalized = isFinalized;
+  }
+
+  const recording = await Recording.findOneAndUpdate(
+    { _id: req.params.recordingId, userId: req.user._id.toString() },
+    updateFields,
+    { returnDocument: 'after' }
   );
 
   if (!recording) {
-    return res.status(404).json({ success: false, error: 'Recording not found' });
+    throw new ApiError(404, 'Recording not found');
   }
 
-  res.json({ success: true, data: recording });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recording, 'Recording note updated successfully'));
 });
 
 export const updateRecordingVitals = asyncHandler(async (req, res) => {
   const { vitals } = req.body;
 
   if (!vitals) {
-    return res.status(400).json({ success: false, error: 'Vitals data is required' });
+    throw new ApiError(400, 'Vitals data is required');
   }
 
-  const recording = await Recording.findByIdAndUpdate(
-    req.params.recordingId,
+  const recording = await Recording.findOneAndUpdate(
+    { _id: req.params.recordingId, userId: req.user._id.toString() },
     { vitals },
     { new: true }
   );
 
   if (!recording) {
-    return res.status(404).json({ success: false, error: 'Recording/session not found' });
+    throw new ApiError(404, 'Recording/session not found');
   }
 
-  res.json({ success: true, data: recording, vitals: recording.vitals });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recording, 'Recording vitals updated successfully'));
 });
 
 export const deleteRecording = asyncHandler(async (req, res) => {
-  const recording = await Recording.findByIdAndDelete(req.params.recordingId);
+  const recording = await Recording.findOneAndDelete({ _id: req.params.recordingId, userId: req.user._id.toString() });
   
   if (!recording) {
-    return res.status(404).json({ success: false, error: 'Recording not found' });
+    throw new ApiError(404, 'Recording not found');
   }
 
-  res.json({ success: true, message: 'Recording deleted' });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, 'Recording deleted successfully'));
 });
 
 export const archiveRecording = asyncHandler(async (req, res) => {
-  const recording = await Recording.findByIdAndUpdate(
-    req.params.recordingId,
+  const recording = await Recording.findOneAndUpdate(
+    { _id: req.params.recordingId, userId: req.user._id.toString() },
     { isArchived: true },
     { new: true }
   );
   
-  res.json({ success: true, data: recording });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recording, 'Recording archived successfully'));
 });
 
 export const searchRecordings = asyncHandler(async (req, res) => {
   const { q } = req.query;
   
   const recordings = await Recording.find({
-    userId: req.params.userId,
+    userId: req.user._id.toString(),
     $or: [
       { 'transcript.text': { $regex: q, $options: 'i' } },
       { 'clinicalNote.diagnosis': { $regex: q, $options: 'i' } },
@@ -130,5 +162,107 @@ export const searchRecordings = asyncHandler(async (req, res) => {
     ],
   });
 
-  res.json({ success: true, data: recordings });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recordings, 'Recordings searched successfully'));
+});
+
+export const updateFollowUp = asyncHandler(async (req, res) => {
+  const { scheduledFollowUp } = req.body;
+
+  const recording = await Recording.findOneAndUpdate(
+    { _id: req.params.recordingId, userId: req.user._id.toString() },
+    { scheduledFollowUp: scheduledFollowUp || null },
+    { new: true }
+  );
+
+  if (!recording) {
+    throw new ApiError(404, 'Recording not found');
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recording, 'Recording follow-up updated successfully'));
+});
+
+export const getUpcomingFollowUps = asyncHandler(async (req, res) => {
+  const now = new Date();
+  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const query = {
+    userId: req.user._id.toString(),
+    scheduledFollowUp: { $gte: now, $lte: nextWeek },
+  };
+
+  if (req.query.patientIds) {
+    query.patientId = { $in: req.query.patientIds.split(',') };
+  }
+
+  const recordings = await Recording.find(query).sort({ scheduledFollowUp: 1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recordings, 'Upcoming follow-ups fetched successfully'));
+});
+
+export const updateFollowUpTodos = asyncHandler(async (req, res) => {
+  const { todos } = req.body;
+
+  if (!Array.isArray(todos)) {
+    throw new ApiError(400, 'Todos must be an array');
+  }
+
+  const recording = await Recording.findOneAndUpdate(
+    { _id: req.params.recordingId, userId: req.user._id.toString() },
+    { followUpTodos: todos },
+    { new: true }
+  );
+
+  if (!recording) {
+    throw new ApiError(404, 'Recording not found');
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, recording.followUpTodos, 'Follow-up todos updated successfully'));
+});
+
+export const createManualVisit = asyncHandler(async (req, res) => {
+  const { patientId, clinicalNote, tags } = req.body;
+
+  const recording = new Recording({
+    userId: req.user._id.toString(),
+    patientId: patientId || null,
+    transcript: {
+      text: clinicalNote?.notes || '',
+      labeledText: clinicalNote?.notes || '',
+      utterances: [],
+      language: 'en',
+      hasSpokenLabels: false,
+    },
+    clinicalNote: {
+      chief_complaint: clinicalNote?.chief_complaint || '',
+      history: clinicalNote?.history || '',
+      examination: clinicalNote?.examination || '',
+      diagnosis: clinicalNote?.diagnosis || '',
+      prescription: clinicalNote?.prescription || [],
+      followup: clinicalNote?.followup || '',
+      notes: clinicalNote?.notes || '',
+    },
+    tags: tags || ['Medication'],
+    metadata: {
+      recordedAt: new Date(),
+      recordingDuration: 0,
+      deviceInfo: req.get('user-agent'),
+      ipAddress: req.ip,
+    },
+    processingStatus: 'completed',
+    isFinalized: true, // Mark as finalized immediately since it's manually saved
+  });
+
+  const savedRecording = await recording.save();
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, savedRecording, 'Visit saved successfully'));
 });

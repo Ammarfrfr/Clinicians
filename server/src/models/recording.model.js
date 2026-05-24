@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-const recordingSchema = new mongoose.Schema(
+const recordingSchema = new Schema(
   {
     userId: {
       type: String, // Allow string IDs (like 'anonymous') or ObjectId strings
@@ -73,6 +73,24 @@ const recordingSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    scheduledFollowUp: {
+      type: Date,
+      default: null,
+    },
+    followUpReminderSent: {
+      type: Boolean,
+      default: false,
+    },
+    isFinalized: {
+      type: Boolean,
+      default: false,
+    },
+    followUpTodos: [{
+      text: { type: String, required: true },
+      completed: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now },
+      completedAt: { type: Date, default: null },
+    }],
   },
   { timestamps: true } // Adds createdAt and updatedAt
 );
@@ -82,4 +100,4 @@ recordingSchema.index({ userId: 1, createdAt: -1 }); // User's recordings sorted
 recordingSchema.index({ patientId: 1 }); // Find all recordings for a patient
 recordingSchema.index({ processingStatus: 1 }); // Find pending recordings
 
-export default mongoose.model('Recording', recordingSchema);
+export const Recording = mongoose.model('Recording', recordingSchema);

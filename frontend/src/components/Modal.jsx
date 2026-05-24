@@ -41,18 +41,18 @@ export function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        {title && <h3 className="modal-title">{title}</h3>}
+    <div className="fixed inset-0 bg-navy/40 flex items-center justify-center z-[9999] p-4 backdrop-blur-xs" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-gray-100 flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        {title && <h3 className="text-base font-bold text-navy mb-3 text-left">{title}</h3>}
         
-        <div className="modal-body">
+        <div className="text-sm text-gray-600 mb-5 text-left">
           {children}
         </div>
-
-        <div className="modal-actions">
+ 
+        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100">
           {secondaryAction && (
             <button 
-              className="modal-btn modal-btn-secondary"
+              className="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-navy font-semibold text-sm rounded-xl transition-all cursor-pointer"
               onClick={secondaryAction}
               autoFocus={!isDanger}
             >
@@ -62,7 +62,7 @@ export function Modal({
           {primaryAction && (
             <button 
               ref={primaryButtonRef}
-              className={`modal-btn ${isDanger ? 'modal-btn-danger' : 'modal-btn-primary'}`}
+              className={`inline-flex items-center justify-center px-4 py-2 font-semibold text-sm rounded-xl transition-all cursor-pointer border-none ${isDanger ? 'bg-red-brand hover:bg-red-brand/90 text-white' : 'bg-teal hover:bg-teal-dark text-navy'}`}
               onClick={primaryAction}
               autoFocus={isDanger}
             >

@@ -1,0 +1,17 @@
+{
+  "short_name": "Qalam",
+  "name": "Qalam - AI Medical Scribe",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0D1B2A",
+  "background_color": "#F8F6F1",
+  "orientation": "portrait"
+}

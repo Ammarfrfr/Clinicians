@@ -1,30 +1,26 @@
 import Groq from 'groq-sdk';
 import { AssemblyAI } from 'assemblyai';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import Recording from '../models/recording.model.js';
-import { asyncHandler } from '../Utils/asyncHandler.js';
+import axios from 'axios';
+import { Recording } from '../models/recording.model.js';
+import { asyncHandler } from '../Utils/asyncHandler.js'
+import { ApiError } from '../Utils/ApiError.js';
+import { ApiResponse } from '../Utils/ApiResponse.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-async function uploadAudioToAssemblyAI(filePath, apiKey) {
-  const uploadRes = await fetch('https://api.assemblyai.com/v2/upload', {
-    method: 'POST',
-    duplex: 'half',
-    headers: {
-      authorization: apiKey,
-      'content-type': 'application/octet-stream',
-    },
-    body: fs.createReadStream(filePath),
-  });
-
-  if (!uploadRes.ok) {
-    throw new Error(`Upload failed: ${uploadRes.status}`);
+async function uploadAudioToAssemblyAI(fileBuffer, apiKey) {
+  try {
+    const response = await axios.post('https://api.assemblyai.com/v2/upload', fileBuffer, {
+      headers: {
+        authorization: apiKey,
+        'content-type': 'application/octet-stream',
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+    return response.data.upload_url;
+  } catch (error) {
+    const status = error.response ? error.response.status : 'unknown';
+    throw new Error(`Upload failed: ${status}`);
   }
-
-  const uploadData = await uploadRes.json();
-  return uploadData.upload_url;
 }
 
 function formatLabeledTranscript(utterances) {
@@ -51,6 +47,7 @@ Extract and organize:
 4. Diagnosis: Clinical impression or confirmed diagnosis
 5. Prescription: Medication list with drug name, dose, route, frequency
 6. Follow-up: Instructions including when to follow up, investigations, activity restrictions
+7. Category Tags: Categorize this visit with one or more relevant tags from: "Surgery", "Medication", "Follow-up", "Consultation", "Investigation", "General".
 
 CRITICAL: Extract EXACT information from conversation only. Use medical abbreviations. If information not mentioned, do not fabricate.
 
@@ -61,26 +58,23 @@ Return ONLY valid JSON:
   "examination": "All physical examination findings and vital signs",
   "diagnosis": "Doctor's clinical impression",
   "prescription": "Medications with dose and frequency",
-  "followup": "Follow-up instructions and care plan"
+  "followup": "Follow-up instructions and care plan",
+  "tags": ["Tag1", "Tag2"]
 }`;
 }
 
 export const analyzeAudio = asyncHandler(async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ success: false, error: 'No audio file provided' });
+    throw new ApiError(400, 'No audio file provided');
   }
 
   if (!process.env.GROQ_API_KEY) {
-    return res.status(500).json({ success: false, error: 'GROQ_API_KEY not configured' });
+    throw new ApiError(500, 'GROQ_API_KEY not configured');
   }
 
   if (!process.env.ASSEMBLYAI_API_KEY) {
-    return res.status(500).json({ success: false, error: 'ASSEMBLYAI_API_KEY not configured' });
+    throw new ApiError(500, 'ASSEMBLYAI_API_KEY not configured');
   }
-
-  // Save buffer to temp file
-  const tempPath = path.join(__dirname, `temp_audio_${Date.now()}.webm`);
-  fs.writeFileSync(tempPath, req.file.buffer);
 
   let translatedText = '';
   let diarizedUtterances = [];
@@ -93,7 +87,7 @@ export const analyzeAudio = asyncHandler(async (req, res) => {
     const [translation, diarizeTranscript] = await Promise.all([
       // Task 1: Groq Whisper Translation (takes ~3-5 seconds)
       groq.audio.translations.create({
-        file: fs.createReadStream(tempPath),
+        file: await Groq.toFile(req.file.buffer, req.file.originalname || 'audio.webm'),
         model: 'whisper-large-v3',
         prompt: 'This is a detailed clinical conversation between a doctor and a patient spoken in Hinglish (Hindi and English). Please translate everything faithfully to English. Do not hallucinate.',
       }),
@@ -105,7 +99,7 @@ export const analyzeAudio = asyncHandler(async (req, res) => {
       // If it takes more than 10 seconds, we abandon AssemblyAI and rely PURELY on Groq LLM for diarization!
       Promise.race([
         (async () => {
-          const audioUrl = await uploadAudioToAssemblyAI(tempPath, process.env.ASSEMBLYAI_API_KEY);
+          const audioUrl = await uploadAudioToAssemblyAI(req.file.buffer, process.env.ASSEMBLYAI_API_KEY);
           return await client.transcripts.transcribe({
             audio_url: audioUrl,
             speaker_labels: true,
@@ -126,14 +120,11 @@ export const analyzeAudio = asyncHandler(async (req, res) => {
       diarizedUtterances = diarizeTranscript.utterances || [];
     }
   } catch (err) {
-    fs.unlinkSync(tempPath);
-    return res.status(400).json({ success: false, error: `Audio processing failed: ${err.message}` });
+    throw new ApiError(400, `Audio processing failed: ${err.message}`);
   }
 
-  fs.unlinkSync(tempPath);
-
   if (!translatedText || translatedText.trim().length === 0) {
-    return res.status(400).json({ success: false, error: 'No speech detected in audio' });
+    throw new ApiError(400, 'No speech detected in audio');
   }
 
   // Step 3: Reconstruct speaker-labeled transcript AND generate clinical note IN PARALLEL
@@ -226,7 +217,7 @@ Put each speaker's turn on a new line. Return ONLY the reconstructed transcript,
 
   // Save to MongoDB
   const recording = new Recording({
-    userId: req.body.userId || 'anonymous',
+    userId: req.user._id.toString(),
     patientId: req.body.patientId || null,
     transcript: {
       text: plainTranscript,
@@ -235,7 +226,15 @@ Put each speaker's turn on a new line. Return ONLY the reconstructed transcript,
       language: 'en',
       hasSpokenLabels: diarizedUtterances.length > 0,
     },
-    clinicalNote: note,
+    clinicalNote: {
+      chief_complaint: note.chief_complaint || '',
+      history: note.history || '',
+      examination: note.examination || '',
+      diagnosis: note.diagnosis || '',
+      prescription: note.prescription || [],
+      followup: note.followup || '',
+    },
+    tags: note.tags || [],
     metadata: {
       recordedAt: new Date(),
       recordingDuration: req.body.recordingDuration || 0,
@@ -247,12 +246,48 @@ Put each speaker's turn on a new line. Return ONLY the reconstructed transcript,
 
   const savedRecording = await recording.save();
 
-  res.json({ 
-    success: true, 
-    transcript: labeledTranscript,
-    plainTranscript,
-    note,
-    recordingId: savedRecording._id,
-    noteError: noteError || null
-  });
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        transcript: labeledTranscript,
+        plainTranscript,
+        note,
+        recordingId: savedRecording._id,
+        noteError: noteError || null
+      },
+      'Audio analyzed successfully'
+    )
+  );
 });
+
+export const transcribeAudio = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ApiError(400, 'No audio file provided');
+  }
+
+  if (!process.env.GROQ_API_KEY) {
+    throw new ApiError(500, 'GROQ_API_KEY not configured');
+  }
+
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  try {
+    const translation = await groq.audio.translations.create({
+      file: await Groq.toFile(req.file.buffer, req.file.originalname || 'audio.webm'),
+      model: 'whisper-large-v3',
+      prompt: 'This is a clinical description or note dictated by a doctor. Please translate or transcribe it faithfully to English.',
+    });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        { text: translation.text },
+        'Audio transcribed successfully'
+      )
+    );
+  } catch (err) {
+    console.error('Transcription error:', err);
+    throw new ApiError(500, `Transcription failed: ${err.message}`);
+  }
+});
+

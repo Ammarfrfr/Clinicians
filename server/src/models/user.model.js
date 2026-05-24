@@ -1,7 +1,9 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-const userSchema = new mongoose.Schema(
+const userSchema = new Schema(
   {
+    // Auth fields
+    googleId: String,
     email: {
       type: String,
       required: true,
@@ -10,43 +12,53 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
-      minlength: 6,
+      required: false, // Optional — Google OAuth users don't have one
     },
+
+    // Doctor Profile
     profile: {
-      name: String,
-      licenseNumber: String, // Medical license
-      specialization: String, // Cardiology, Orthopedics, etc.
-      institution: String, // Hospital/Clinic name
+      name: { type: String, required: true },
+      username: { type: String, unique: true, sparse: true },
+      avatar: String,
+      hospital: String,
+      specialization: String, // Cardiology, Orthopedics, General, etc.
+      licenseNumber: String,
       phone: String,
+      qualification: String, // MBBS, MD, MS, DNB, etc.
     },
-    recordingStats: {
-      totalRecordings: {
-        type: Number,
-        default: 0,
-      },
-      totalDuration: {
-        type: Number,
-        default: 0, // in seconds
-      },
-      lastRecordingDate: Date,
-    },
+
+    // Subscription
     subscriptionPlan: {
       type: String,
-      enum: ['free', 'pro', 'enterprise'],
+      enum: ['free', 'pro', 'clinic'],
       default: 'free',
     },
-    quotas: {
-      recordingsPerMonth: Number,
-      maxAudioDurationSeconds: Number,
-      storageGBs: Number,
+
+    // Usage tracking (for quota enforcement)
+    usage: {
+      consultationsThisMonth: { type: Number, default: 0 },
+      storageUsedMB: { type: Number, default: 0 },
+      lastResetDate: Date,
     },
+
     isActive: {
       type: Boolean,
       default: true,
+    },
+    role: {
+      type: String,
+      enum: ['doctor', 'admin'],
+      default: 'doctor',
+    },
+    onboardingComplete: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
 );
 
-export default mongoose.model('User', userSchema);
+// Indexes
+userSchema.index({ googleId: 1 });
+
+export const User = mongoose.model('User', userSchema);

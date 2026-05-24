@@ -1,26 +1,14 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+import { DB_NAME } from "./dbname.js";
 
-const connectDB = async () => {
+const connectDb = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri) {
-      throw new Error('MONGODB_URI environment variable is not set');
-    }
-
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 15000,
-      connectTimeoutMS: 15000,
-      retryWrites: true,
-      w: 'majority'
-    });
-
-    console.log('✅ MongoDB Connected');
-    return mongoose.connection;
+    const connection = await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
+    console.log(`MongoDB connected !! ${connection.connection.host}`);
   } catch (error) {
-    console.error('MongoDB Connection Error:', error.message);
-    return null;
+    console.log("Error : MONGODB CONNECTION ERROR!!", error);
+    process.exit(1);
   }
 };
 
-export default connectDB;
+export { connectDb };
