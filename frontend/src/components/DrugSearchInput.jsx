@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { searchDrugs } from '../utils/drugSearch.js';
 
-export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (CDSCO)...', onBlur }) {
+export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (CDSCO)...', onBlur, hideIcon = false }) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -70,10 +70,12 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
 
   return (
     <div className="relative w-full text-left" ref={wrapperRef}>
-      <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-1.5 bg-white w-full focus-within:ring-2 focus-within:ring-teal/20 focus-within:border-teal transition-all">
-        <svg className="text-gray-400 shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+      <div className={`flex items-center gap-1.5 border border-gray-200 rounded-xl bg-white w-full focus-within:ring-2 focus-within:ring-teal/20 focus-within:border-teal transition-all ${hideIcon ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
+        {!hideIcon && (
+          <svg className="text-gray-400 shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        )}
         <input
           type="text"
           value={query}
@@ -82,7 +84,7 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
           onFocus={() => results.length > 0 && setShowDropdown(true)}
           onBlur={onBlur}
           placeholder={placeholder}
-          className="w-full text-sm border-none bg-transparent focus:outline-none placeholder:text-gray-400 p-0"
+          className="w-full text-xs border-none bg-transparent focus:outline-none placeholder:text-gray-400 p-0"
         />
       </div>
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qalam-v1';
+const CACHE_NAME = 'qalam-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -63,4 +63,22 @@ self.addEventListener('fetch', (e) => {
         });
       })
   );
+});
+
+// Background Sync Broadcast
+async function triggerClientSync() {
+  try {
+    const clients = await self.clients.matchAll({ type: 'window' });
+    for (const client of clients) {
+      client.postMessage({ type: 'SYNC_PENDING_RECORDINGS' });
+    }
+  } catch (err) {
+    console.error('SW: failed to broadcast sync event:', err);
+  }
+}
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-recordings') {
+    event.waitUntil(triggerClientSync());
+  }
 });

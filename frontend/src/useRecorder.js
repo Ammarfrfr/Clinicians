@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { apiClient } from './config'
+import { apiClient } from './config';
+import { parseVoiceCommand, stripCommand } from './utils/voiceCommands';
+import { saveRecordingOffline } from './utils/offlineQueue';
 
-export function useRecorder(patientId = null) {
+export function useRecorder(patientId = null, options = {}) {
   const [recording, setRecording] = useState(false);
   const [loading, setLoading] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -13,6 +15,8 @@ export function useRecorder(patientId = null) {
   const [recordingId, setRecordingId] = useState(null);
   const [retryAvailable, setRetryAvailable] = useState(false);
   const [transcriptionError, setTranscriptionError] = useState(null);
+  const [offlineSaved, setOfflineSaved] = useState(false);
+  const [lastVoiceCommand, setLastVoiceCommand] = useState(null);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -20,6 +24,11 @@ export function useRecorder(patientId = null) {
   const timerIntervalRef = useRef(null);
   const recognitionRef = useRef(null);
   const lastAudioBlobRef = useRef(null);
+
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   // Setup Web Speech API for live transcription
   const setupLiveTranscription = () => {
@@ -35,15 +44,51 @@ export function useRecorder(patientId = null) {
 
     recognition.onresult = (event) => {
       let interimTranscript = '';
+      let commandTriggered = false;
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const text = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += text + ' ';
+          // Check for voice commands
+          const voiceCmd = parseVoiceCommand(text);
+          if (voiceCmd) {
+            commandTriggered = true;
+            console.log('🎙️ Voice Command Detected:', voiceCmd);
+            setLastVoiceCommand(voiceCmd);
+            
+            // Execute the corresponding command callback
+            if (voiceCmd.command === 'stop') {
+              if (optionsRef.current.onStop) {
+                optionsRef.current.onStop();
+              } else {
+                stopRecording();
+              }
+            } else if (voiceCmd.command === 'save') {
+              if (optionsRef.current.onSave) {
+                optionsRef.current.onSave();
+              }
+            } else if (voiceCmd.command === 'followup') {
+              if (optionsRef.current.onFollowUp) {
+                optionsRef.current.onFollowUp(voiceCmd.args);
+              }
+            }
+            
+            // Strip the command text so it is not appended to the transcript
+            const strippedText = stripCommand(text, voiceCmd.matchedText);
+            if (strippedText) {
+              finalTranscript += strippedText + ' ';
+            }
+          } else {
+            finalTranscript += text + ' ';
+          }
         } else {
           interimTranscript += text;
         }
       }
-      setLiveTranscript(finalTranscript + (interimTranscript ? `[${interimTranscript}]` : ''));
+
+      if (!commandTriggered) {
+        setLiveTranscript(finalTranscript + (interimTranscript ? `[${interimTranscript}]` : ''));
+      }
     };
 
     recognition.onerror = (event) => {
@@ -94,6 +139,7 @@ export function useRecorder(patientId = null) {
       setProcessingStep(0);
       setRetryAvailable(false);
       setTranscriptionError(null);
+      setOfflineSaved(false);
 
       timerIntervalRef.current = setInterval(() => {
         setTimer((t) => t + 1);
@@ -155,6 +201,11 @@ export function useRecorder(patientId = null) {
       formData.append('audio', audioBlob, 'recording.webm');
       if (patientId) formData.append('patientId', patientId);
 
+      // Append template sections if present in options
+      if (optionsRef.current.templateSections) {
+        formData.append('templateSections', JSON.stringify(optionsRef.current.templateSections));
+      }
+
       const response = await apiClient.post('/api/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -180,6 +231,26 @@ export function useRecorder(patientId = null) {
       }
     } catch (err) {
       console.error('Error uploading audio:', err.response?.data || err.message);
+
+      // Check if it's a network/offline error
+      const isNetworkError = !err.response || err.code === 'ERR_NETWORK' || !navigator.onLine;
+      if (isNetworkError) {
+        console.log('🌐 Network/Offline error detected. Saving recording offline...');
+        const metadata = {};
+        if (optionsRef.current.templateSections) {
+          metadata.templateSections = optionsRef.current.templateSections;
+        }
+
+        const saved = await saveRecordingOffline(audioBlob, patientId, metadata);
+        if (saved) {
+          setOfflineSaved(true);
+          setTranscriptionError('Network offline: Recording saved locally. It will auto-sync once connection is restored.');
+          setProcessingStep(0);
+          setLoading(false);
+          return;
+        }
+      }
+
       setTranscriptionError(err.response?.data?.error || err.message || 'Network error occurred during transcription.');
       setRetryAvailable(true);
       setLoading(false);
@@ -200,6 +271,7 @@ export function useRecorder(patientId = null) {
     setRecordingId(null);
     setRetryAvailable(false);
     setTranscriptionError(null);
+    setOfflineSaved(false);
 
     if (!patientId) return;
 
@@ -224,7 +296,10 @@ export function useRecorder(patientId = null) {
       }
     };
 
-    fetchLatestSession();
+    const timer = setTimeout(() => {
+      fetchLatestSession();
+    }, 50);
+    return () => clearTimeout(timer);
   }, [patientId]);
 
   // Cleanup on unmount
@@ -254,6 +329,7 @@ export function useRecorder(patientId = null) {
     setTranscript('');
     setNote(null);
     setNoteError(null);
+    setOfflineSaved(false);
     startRecording();
   };
 
@@ -276,5 +352,9 @@ export function useRecorder(patientId = null) {
     reRecord,
     retryAvailable,
     transcriptionError,
+    offlineSaved,
+    setOfflineSaved,
+    lastVoiceCommand,
+    setLastVoiceCommand,
   };
 }

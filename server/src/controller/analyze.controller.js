@@ -34,34 +34,68 @@ function formatLabeledTranscript(utterances) {
     .join('\n');
 }
 
-function createStructuredPrompt(transcript) {
+function createStructuredPrompt(transcript, templateSections) {
+  // If custom template sections are provided, build dynamic extraction instructions
+  let sectionInstructions = '';
+  let jsonSchema = '';
+
+  if (templateSections && Array.isArray(templateSections) && templateSections.length > 0) {
+    sectionInstructions = templateSections.map((s, i) =>
+      `${i + 1}. ${s.label}: Extract relevant clinical information for this field`
+    ).join('\n');
+    sectionInstructions += `\n${templateSections.length + 1}. Prescription: Medication list with drug name, dose, route, frequency`;
+    sectionInstructions += `\n${templateSections.length + 2}. Follow-up: Instructions including when to follow up, investigations, activity restrictions`;
+    sectionInstructions += `\n${templateSections.length + 3}. Category Tags: Categorize this visit with one or more relevant tags from: "Surgery", "Medication", "Follow-up", "Consultation", "Investigation", "General".`;
+
+    const schemaFields = templateSections.map(s =>
+      `  "${s.key}": "Relevant ${s.label.toLowerCase()} information"`
+    ).join(',\n');
+
+    jsonSchema = `{
+${schemaFields},
+  "prescription": [
+    { "drug": "Medication name", "dose": "dosage e.g. 500mg or 1 tab", "frequency": "frequency e.g. once daily or twice daily" }
+  ],
+  "followup": "Follow-up instructions and care plan",
+  "tags": ["Tag1", "Tag2"]
+}`;
+  } else {
+    // Default SOAP template
+    sectionInstructions = `1. Chief Complaint: Main symptom, severity, duration, associated symptoms
+2. History: Patient age, symptoms timeline, past medical history, medications tried, risk factors
+3. Examination: Vital signs, physical findings, test results, observations
+4. Diagnosis: Clinical impression or confirmed diagnosis
+5. Prescription: Medication list with drug name, dose, route, frequency
+6. Follow-up: Instructions including when to follow up, investigations, activity restrictions
+7. Category Tags: Categorize this visit with one or more relevant tags from: "Surgery", "Medication", "Follow-up", "Consultation", "Investigation", "General".`;
+
+    jsonSchema = `{
+  "chief_complaint": "Complete chief complaint with severity and duration",
+  "history": "Comprehensive patient history with timeline",
+  "examination": "All physical examination findings and vital signs",
+  "diagnosis": "Doctor's clinical impression",
+  "prescription": [
+    { "drug": "Medication name", "dose": "dosage e.g. 500mg or 1 tab", "frequency": "frequency e.g. once daily or twice daily" }
+  ],
+  "followup": "Follow-up instructions and care plan",
+  "tags": ["Tag1", "Tag2"]
+}`;
+  }
+
   return `You are an expert clinical documentation assistant for Indian doctors. Generate complete, structured medical documentation from a doctor-patient conversation.
 
 Conversation transcript translated to English:
 ${transcript}
 
 Extract and organize:
-1. Chief Complaint: Main symptom, severity, duration, associated symptoms
-2. History: Patient age, symptoms timeline, past medical history, medications tried, risk factors
-3. Examination: Vital signs, physical findings, test results, observations
-4. Diagnosis: Clinical impression or confirmed diagnosis
-5. Prescription: Medication list with drug name, dose, route, frequency
-6. Follow-up: Instructions including when to follow up, investigations, activity restrictions
-7. Category Tags: Categorize this visit with one or more relevant tags from: "Surgery", "Medication", "Follow-up", "Consultation", "Investigation", "General".
+${sectionInstructions}
 
 CRITICAL: Extract EXACT information from conversation only. Use medical abbreviations. If information not mentioned, do not fabricate.
 
 Return ONLY valid JSON:
-{
-  "chief_complaint": "Complete chief complaint with severity and duration",
-  "history": "Comprehensive patient history with timeline",
-  "examination": "All physical examination findings and vital signs",
-  "diagnosis": "Doctor's clinical impression",
-  "prescription": "Medications with dose and frequency",
-  "followup": "Follow-up instructions and care plan",
-  "tags": ["Tag1", "Tag2"]
-}`;
+${jsonSchema}`;
 }
+
 
 export const analyzeAudio = asyncHandler(async (req, res) => {
   if (!req.file) {
@@ -78,6 +112,16 @@ export const analyzeAudio = asyncHandler(async (req, res) => {
 
   let translatedText = '';
   let diarizedUtterances = [];
+
+  // Parse custom template sections if provided
+  let templateSections = null;
+  try {
+    if (req.body.templateSections) {
+      templateSections = JSON.parse(req.body.templateSections);
+    }
+  } catch (e) {
+    // Ignore parse errors — fall back to default SOAP
+  }
 
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const client = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
@@ -174,7 +218,7 @@ Put each speaker's turn on a new line. Return ONLY the reconstructed transcript,
             },
             {
               role: 'user',
-              content: createStructuredPrompt(translatedText)
+              content: createStructuredPrompt(translatedText, templateSections)
             }
           ],
         })
@@ -289,5 +333,136 @@ export const transcribeAudio = asyncHandler(async (req, res) => {
     console.error('Transcription error:', err);
     throw new ApiError(500, `Transcription failed: ${err.message}`);
   }
+});
+
+export const dictateSection = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ApiError(400, 'No audio file provided');
+  }
+  const { section, existingValue } = req.body;
+  if (!section) {
+    throw new ApiError(400, 'No section specified');
+  }
+
+  if (!process.env.GROQ_API_KEY) {
+    throw new ApiError(500, 'GROQ_API_KEY not configured');
+  }
+
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+  // Step 1: Transcribe the audio
+  let transcription = '';
+  try {
+    const translation = await groq.audio.translations.create({
+      file: await Groq.toFile(req.file.buffer, req.file.originalname || 'audio.webm'),
+      model: 'whisper-large-v3',
+      prompt: 'This is clinical dictation by a doctor for a specific section of a medical SOAP note.',
+    });
+    transcription = translation.text;
+  } catch (err) {
+    console.error('Transcription failed:', err);
+    throw new ApiError(500, `Transcription failed: ${err.message}`);
+  }
+
+  if (!transcription || transcription.trim().length === 0) {
+    throw new ApiError(400, 'No speech detected in audio');
+  }
+
+  // Step 2: Use LLM to structure/refine the transcription for the specific section
+  let finalValue;
+  if (process.env.LLM_MODEL) {
+    try {
+      let prompt = '';
+      if (section === 'prescription') {
+        let existingPrescriptions = [];
+        try {
+          if (existingValue) {
+            existingPrescriptions = JSON.parse(existingValue);
+          }
+        } catch (e) {
+          existingPrescriptions = [];
+        }
+
+        prompt = `You are an expert clinical documentation assistant. Parse this transcribed medical dictation of medications into a structured JSON array of prescription objects.
+Each medication object must have:
+- "drug": medication name (properly capitalized)
+- "dose": dosage details (e.g. "500 mg", "1 tab", or empty if not mentioned)
+- "frequency": frequency (e.g. "once daily", "twice daily", "tds", or empty if not mentioned)
+
+Dictated text:
+"${transcription}"
+
+Existing prescription list (merge or append to these):
+${JSON.stringify(existingPrescriptions, null, 2)}
+
+Return ONLY a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json).
+Example output format:
+[
+  { "drug": "Paracetamol", "dose": "500 mg", "frequency": "once daily" }
+]`;
+      } else {
+        prompt = `You are an expert clinical documentation assistant. Refine and format the following transcribed clinical dictation into professional, clear medical prose for the "${section}" section of a SOAP note.
+Make it grammatically correct and use standard clinical abbreviations where appropriate.
+
+Dictated text:
+"${transcription}"
+
+${existingValue ? `Existing content for this section (intelligently integrate/append the new dictation with this):
+"${existingValue}"` : ''}
+
+Return ONLY the final cleaned text for this section, with absolutely no introduction, preamble, or markdown formatting.`;
+      }
+
+      const response = await groq.chat.completions.create({
+        model: process.env.LLM_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+      });
+
+      const responseText = response.choices[0].message.content.trim();
+      if (section === 'prescription') {
+        let cleanText = responseText;
+        if (cleanText.startsWith('```')) {
+          cleanText = cleanText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+        }
+        finalValue = JSON.parse(cleanText);
+      } else {
+        finalValue = responseText;
+      }
+    } catch (err) {
+      console.error('LLM structuring failed:', err);
+      // Fallback
+      if (section === 'prescription') {
+        try {
+          finalValue = existingValue ? JSON.parse(existingValue) : [];
+        } catch (e) {
+          finalValue = [];
+        }
+        finalValue.push({ drug: transcription, dose: '', frequency: '' });
+      } else {
+        finalValue = existingValue ? `${existingValue}\n${transcription}` : transcription;
+      }
+    }
+  } else {
+    // Fallback
+    if (section === 'prescription') {
+      try {
+        finalValue = existingValue ? JSON.parse(existingValue) : [];
+      } catch (e) {
+        finalValue = [];
+      }
+      finalValue.push({ drug: transcription, dose: '', frequency: '' });
+    } else {
+      finalValue = existingValue ? `${existingValue}\n${transcription}` : transcription;
+    }
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { value: finalValue },
+      'Section dictation processed successfully'
+    )
+  );
 });
 

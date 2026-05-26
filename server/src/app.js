@@ -57,6 +57,7 @@ import recordingsRoute from './routes/recordings.js';
 import patientRoute from './routes/patient.routes.js';
 import whatsappRoute from './routes/whatsapp.routes.js';
 import adminRoute from './routes/admin.routes.js';
+import shareRoute from './routes/share.routes.js';
 
 // Routes use
 app.use('/api/auth', authRoute);
@@ -65,5 +66,6 @@ app.use('/api/recordings', recordingsRoute);
 app.use('/api/patients', patientRoute);
 app.use('/api/whatsapp', whatsappRoute);
 app.use('/api/admin', adminRoute);
+app.use('/api/share', shareRoute);
 
 export default app;
