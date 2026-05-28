@@ -169,7 +169,7 @@ export function getTemplateForSpecialization(specialization) {
 export function getAllTemplateOptions() {
   return Object.entries(NOTE_TEMPLATES).map(([key, tmpl]) => ({
     value: key,
-    label: `${tmpl.icon} ${tmpl.label}`,
+    label: tmpl.label,
     id: tmpl.id,
   }));
 }

@@ -517,7 +517,7 @@ function AppContent() {
           />
 
           {/* Center Content */}
-          <main className="flex-1 flex flex-col bg-warm-white p-5 overflow-y-auto min-h-0">
+          <main className="flex-1 flex flex-col bg-warm-white p-5 overflow-y-auto min-h-0 min-w-0">
             {activePatient ? (
               <>
                 <PatientBar
@@ -526,33 +526,33 @@ function AppContent() {
                   onDeletePatient={handleDeletePatient}
                 />
 
-                <div className="flex gap-2 mb-5 border-b border-gray-200 pb-2 shrink-0">
+                <div className="flex gap-2 mb-5 border-b border-gray-200 pb-2 shrink-0 overflow-x-auto no-scrollbar whitespace-nowrap">
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer ${activeTab === 'record' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'record' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/record`)}
                   >
                     Record
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer ${activeTab === 'visits' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'visits' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/visits`)}
                   >
                     Past Visits
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer ${activeTab === 'vitals' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'vitals' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/vitals`)}
                   >
                     Vitals
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer ${activeTab === 'reminders' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'reminders' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/reminders`)}
                   >
                     Reminders
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer ${activeTab === 'files' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'files' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/files`)}
                   >
                     Files
