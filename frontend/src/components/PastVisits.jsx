@@ -4,6 +4,7 @@ import { generateClinicalNotePDF, downloadPDFFromHTML } from '../utils/generateP
 import { Modal } from './Modal';
 import { apiClient } from '../config.js';
 import { DrugSearchInput } from './DrugSearchInput.jsx';
+import { ChevronDown, Trash2, Pencil, Save } from 'lucide-react';
 
 export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
   const [sessions, setSessions] = useState([]);
@@ -88,14 +89,20 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
       const data = response.data;
       if (data.success) {
         setSessions((prev) => prev.filter((s) => s._id !== deleteConfirmSessionId));
-        alert('Visit deleted successfully');
+        setSuccessMessage('Visit deleted successfully!');
+        setShowSuccessModal(true);
         setDeleteConfirmSessionId(null);
+        setTimeout(() => setShowSuccessModal(false), 2000);
       } else {
-        alert('Error deleting visit: ' + data.error);
+        setSuccessMessage('Error deleting visit: ' + data.error);
+        setShowSuccessModal(true);
+        setDeleteConfirmSessionId(null);
       }
     } catch (err) {
       console.error('Error deleting session:', err);
-      alert('Error deleting visit: ' + err.message);
+      setSuccessMessage('Error deleting visit: ' + err.message);
+      setShowSuccessModal(true);
+      setDeleteConfirmSessionId(null);
     }
   };
 
@@ -246,8 +253,9 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
                       e.stopPropagation();
                       toggleExpand(session._id);
                     }}
+                    title={expandedSessionId === session._id ? "Collapse" : "Expand"}
                   >
-                    ▼
+                    <ChevronDown size={16} />
                   </button>
                   <button
                     className="p-1.5 text-gray-400 hover:text-red-brand hover:bg-red-brand-light rounded-lg cursor-pointer transition-all"
@@ -257,7 +265,7 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
                     }}
                     title="Delete this visit"
                   >
-                    🗑️
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -278,7 +286,13 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
                                 onClick={handleSaveEditedNote}
                                 disabled={savingEditId === session._id}
                               >
-                                {savingEditId === session._id ? 'Saving...' : '💾 Save'}
+                                {savingEditId === session._id ? (
+                                  'Saving...'
+                                ) : (
+                                  <>
+                                    <Save size={12} /> Save
+                                  </>
+                                )}
                               </button>
                               <button
                                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 hover:bg-gray-50 text-navy text-xs font-bold rounded-lg transition-colors cursor-pointer"
@@ -294,7 +308,7 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
                                 onClick={() => handleEditSession(session)}
                                 title="Edit clinical note"
                               >
-                                ✏️ Edit
+                                <Pencil size={12} /> Edit
                               </button>
                               <button
                                 className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-gray-200 bg-white hover:bg-gray-50 rounded-lg font-semibold text-gray-700 cursor-pointer transition-all"
