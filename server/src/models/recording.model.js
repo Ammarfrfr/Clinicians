@@ -41,6 +41,17 @@ const recordingSchema = new Schema(
       prescription: mongoose.Schema.Types.Mixed, // Accept both string and array
       followup: String,
       notes: String,
+      exercises: [
+        {
+          id: String,
+          name: String,
+          category: String,
+          sets: String,
+          reps: String,
+          frequency: String,
+          instruction: String,
+        }
+      ],
     },
     vitals: {
       systolic: Number,

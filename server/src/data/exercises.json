@@ -1,0 +1,128 @@
+[
+  {
+    "id": "short_arc_quads",
+    "name": "Short Arc Quads",
+    "category": "Knee",
+    "instruction": "Place a rolled towel or foam roller under your knee. Slowly raise your foot until the knee is straight. Tighten your thigh muscle and hold for 5 seconds, then slowly lower your foot.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "straight_leg_raises",
+    "name": "Straight Leg Raises",
+    "category": "Knee",
+    "instruction": "Lie flat on your back. Bend one knee with foot flat. Keep the other leg straight and slowly raise it 6-12 inches off the bed. Hold for 5 seconds, then lower slowly.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "quad_sets",
+    "name": "Quad Sets",
+    "category": "Knee",
+    "instruction": "Lie flat on your back with legs straight. Tighten the thigh muscle of your injured leg by pushing the back of your knee firmly down into the bed. Hold for 5 seconds, then relax.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "knee_slides",
+    "name": "Knee Slides (Heel Slides)",
+    "category": "Knee",
+    "instruction": "Lie flat on your back. Slowly slide your heel toward your buttocks, bending your knee as far as comfortable. Hold for 5 seconds, then slowly slide it back straight.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "ankle_pumps",
+    "name": "Ankle Pumps",
+    "category": "Knee",
+    "instruction": "Move your foot/ankle up and down as if pressing a pedal. Point your toes toward the ceiling, then point them away. Perform slowly and continuously.",
+    "defaultSetsReps": "3 sets of 15 reps"
+  },
+  {
+    "id": "gluteal_squeezes",
+    "name": "Gluteal Squeezes",
+    "category": "Hip",
+    "instruction": "Lie flat on your back or stomach. Squeeze your buttocks muscles together as tightly as possible. Hold for 5 seconds, then relax.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "hip_abduction_lying",
+    "name": "Hip Abduction (Lying)",
+    "category": "Hip",
+    "instruction": "Lie on your side with the top leg straight. Slowly raise the top leg straight up towards the ceiling. Hold for 3 seconds, then lower slowly.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "bridging",
+    "name": "Bridging",
+    "category": "Hip",
+    "instruction": "Lie on your back with knees bent and feet flat. Tighten your stomach and buttocks, and lift your hips up off the bed until your body is straight. Hold for 5 seconds, then lower slowly.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "press_up_sphinx",
+    "name": "Press-up (Sphinx Position)",
+    "category": "Low Back",
+    "instruction": "Lie flat on your stomach. Slowly push your chest up on your forearms, keeping your hips flat on the floor. Look straight ahead. Hold for 10-15 seconds, then lower slowly.",
+    "defaultSetsReps": "2 sets of 5 reps"
+  },
+  {
+    "id": "knee_to_chest",
+    "name": "Knee to Chest",
+    "category": "Low Back",
+    "instruction": "Lie on your back with knees bent and feet flat. Pull one knee up to your chest using both hands until you feel a gentle stretch in your back. Hold for 15 seconds, then lower slowly.",
+    "defaultSetsReps": "3 sets of 5 reps"
+  },
+  {
+    "id": "cats_and_dogs",
+    "name": "Cat and Dog Stretch",
+    "category": "Low Back",
+    "instruction": "On hands and knees, slowly arch your back towards the ceiling (cat stretch). Hold for 5 seconds. Then slowly arch your back towards the floor, lifting your head slightly (dog stretch). Hold for 5 seconds.",
+    "defaultSetsReps": "2 sets of 10 reps"
+  },
+  {
+    "id": "circular_pendulum",
+    "name": "Circular Pendulum",
+    "category": "Shoulder",
+    "instruction": "Lean forward resting one arm on a table for support. Let your other arm hang freely. Gently swing the hanging arm in small circles clockwise, then counter-clockwise.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "shoulder_flexion_overhead",
+    "name": "Shoulder Flexion (Overhead)",
+    "category": "Shoulder",
+    "instruction": "Raise your arm straight forward and overhead as far as comfortable. Hold for 5 seconds, then lower slowly.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "neck_glide",
+    "name": "Neck Glide (Chin Tucks)",
+    "category": "Neck",
+    "instruction": "Keep your neck straight. Slowly slide your chin straight backward (like making a double chin). Hold for 5 seconds, then relax.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  },
+  {
+    "id": "neck_rotation",
+    "name": "Neck Rotation",
+    "category": "Neck",
+    "instruction": "Slowly turn your head to one side as far as comfortable, looking over your shoulder. Hold for 5 seconds, then return to center. Repeat on the other side.",
+    "defaultSetsReps": "3 sets of 5 reps"
+  },
+  {
+    "id": "wrist_flexion_passive",
+    "name": "Wrist Flexion Stretch",
+    "category": "Wrist",
+    "instruction": "Extend your arm forward with palm facing down. Use your other hand to gently bend your wrist downwards. Hold for 10 seconds.",
+    "defaultSetsReps": "3 sets of 5 reps"
+  },
+  {
+    "id": "wrist_extension_passive",
+    "name": "Wrist Extension Stretch",
+    "category": "Wrist",
+    "instruction": "Extend your arm forward with palm facing up. Use your other hand to gently bend your wrist downwards (stretching the forearm). Hold for 10 seconds.",
+    "defaultSetsReps": "3 sets of 5 reps"
+  },
+  {
+    "id": "grip_strengthening",
+    "name": "Grip Strengthening",
+    "category": "Wrist",
+    "instruction": "Hold a soft rubber ball or a rolled towel in your hand. Squeeze it as tightly as possible. Hold for 5 seconds, then release.",
+    "defaultSetsReps": "3 sets of 10 reps"
+  }
+]

@@ -11,11 +11,25 @@ const SECTION_OPTIONS = [
   { key: 'prescription', label: 'Prescription' },
   { key: 'followup', label: 'Follow-up' },
   { key: 'vitals', label: 'Vitals' },
+  { key: 'exercises', label: 'Rehabilitation' },
 ];
 
 export function ExportModal({ isOpen, onClose, note, patient, doctor }) {
+  const hasData = (key) => {
+    if (key === 'vitals') {
+      return !!(note?.vitals && Object.keys(note.vitals).length > 0);
+    }
+    if (key === 'prescription') {
+      return !!(Array.isArray(note?.prescription) && note.prescription.length > 0);
+    }
+    if (key === 'exercises') {
+      return !!(Array.isArray(note?.exercises) && note.exercises.length > 0);
+    }
+    return !!note?.[key];
+  };
+
   const [sections, setSections] = useState(() =>
-    Object.fromEntries(SECTION_OPTIONS.map((s) => [s.key, true]))
+    Object.fromEntries(SECTION_OPTIONS.map((s) => [s.key, hasData(s.key)]))
   );
   const [physicalLetterhead, setPhysicalLetterhead] = useState(false);
 
@@ -40,10 +54,11 @@ export function ExportModal({ isOpen, onClose, note, patient, doctor }) {
         prescription: true,
         followup: true,
         vitals: false,
+        exercises: true,
       });
     } else {
-      // Reset back to checking all
-      setSections(Object.fromEntries(SECTION_OPTIONS.map((s) => [s.key, true])));
+      // Reset back to checking all that have data
+      setSections(Object.fromEntries(SECTION_OPTIONS.map((s) => [s.key, hasData(s.key)])));
     }
   };
 
@@ -99,7 +114,7 @@ export function ExportModal({ isOpen, onClose, note, patient, doctor }) {
                 className="w-4 h-4 accent-teal cursor-pointer disabled:cursor-not-allowed"
               />
               <span className="text-sm font-semibold text-navy">{label}</span>
-              {!note?.[key] && key !== 'vitals' && (
+              {!hasData(key) && (
                 <span className="ml-auto text-[9.5px] font-bold text-red-brand bg-red-brand-light px-1.5 py-0.5 rounded uppercase">No data</span>
               )}
             </label>

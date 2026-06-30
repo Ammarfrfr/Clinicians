@@ -4,7 +4,8 @@ import { generateClinicalNotePDF, downloadPDFFromHTML } from '../utils/generateP
 import { Modal } from './Modal';
 import { apiClient } from '../config.js';
 import { DrugSearchInput } from './DrugSearchInput.jsx';
-import { ChevronDown, Trash2, Pencil, Save } from 'lucide-react';
+import { ChevronDown, Trash2, Pencil, Save, Activity } from 'lucide-react';
+import exercisesDb from '../data/exercises.json';
 
 export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
   const [sessions, setSessions] = useState([]);
@@ -108,7 +109,9 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
 
   const handleEditSession = (session) => {
     setEditingSessionId(session._id);
-    setEditedNote(JSON.parse(JSON.stringify(session.note)));
+    const noteCopy = JSON.parse(JSON.stringify(session.note));
+    if (!noteCopy.exercises) noteCopy.exercises = [];
+    setEditedNote(noteCopy);
   };
 
   const handleEditChange = (field, value) => {
@@ -448,6 +451,136 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
                                 className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
                               />
                             </div>
+                            <div className="flex flex-col gap-2 md:col-span-2 p-3 bg-gray-50 border border-gray-150 rounded-xl mt-1 text-left">
+                              <label className="text-[11.5px] font-bold text-navy flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-teal" /> Prescribed Rehabilitation</label>
+                              
+                              {/* Selected exercises */}
+                              {editedNote?.exercises && editedNote.exercises.length > 0 && (
+                                <div className="flex flex-col gap-2 mb-2">
+                                  {editedNote.exercises.map((ex, idx) => (
+                                    <div key={idx} className="bg-white border border-gray-150 rounded-xl p-3 shadow-xs flex flex-col gap-2">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs font-bold text-navy">{ex.name} <span className="text-[9px] font-mono font-medium text-gray-400">({ex.category})</span></span>
+                                        <button
+                                          type="button"
+                                          className="p-1 text-gray-400 hover:text-red-brand bg-transparent border-none cursor-pointer flex items-center justify-center"
+                                          onClick={() => {
+                                            setEditedNote(prev => ({
+                                              ...prev,
+                                              exercises: prev.exercises.filter((_, i) => i !== idx)
+                                            }));
+                                          }}
+                                        >
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div className="flex flex-col gap-0.5">
+                                          <label className="text-[9px] font-bold text-gray-400 uppercase">Sets</label>
+                                          <input
+                                            type="text"
+                                            value={ex.sets || ''}
+                                            onChange={(e) => {
+                                              setEditedNote(prev => {
+                                                const updated = [...prev.exercises];
+                                                updated[idx] = { ...updated[idx], sets: e.target.value };
+                                                return { ...prev, exercises: updated };
+                                              });
+                                            }}
+                                            className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                                          />
+                                        </div>
+                                        <div className="flex flex-col gap-0.5">
+                                          <label className="text-[9px] font-bold text-gray-400 uppercase">Reps</label>
+                                          <input
+                                            type="text"
+                                            value={ex.reps || ''}
+                                            onChange={(e) => {
+                                              setEditedNote(prev => {
+                                                const updated = [...prev.exercises];
+                                                updated[idx] = { ...updated[idx], reps: e.target.value };
+                                                return { ...prev, exercises: updated };
+                                              });
+                                            }}
+                                            className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                                          />
+                                        </div>
+                                        <div className="flex flex-col gap-0.5 col-span-2">
+                                          <label className="text-[9px] font-bold text-gray-400 uppercase">Frequency</label>
+                                          <input
+                                            type="text"
+                                            value={ex.frequency || ''}
+                                            onChange={(e) => {
+                                              setEditedNote(prev => {
+                                                const updated = [...prev.exercises];
+                                                updated[idx] = { ...updated[idx], frequency: e.target.value };
+                                                return { ...prev, exercises: updated };
+                                              });
+                                            }}
+                                            className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Dropdown search */}
+                              <select
+                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                                value=""
+                                onChange={(e) => {
+                                  const selectedId = e.target.value;
+                                  if (!selectedId) return;
+                                  const ex = exercisesDb.find(item => item.id === selectedId);
+                                  if (!ex) return;
+                                  
+                                  setEditedNote(prev => {
+                                    const exercises = prev.exercises ? [...prev.exercises] : [];
+                                    if (exercises.some(item => item.id === ex.id)) return prev;
+
+                                    let setsStr = "3";
+                                    let repsStr = "10";
+                                    if (ex.defaultSetsReps.includes("sets")) {
+                                      setsStr = ex.defaultSetsReps.split("sets")[0].trim();
+                                    }
+                                    if (ex.defaultSetsReps.includes("reps")) {
+                                      const parts = ex.defaultSetsReps.split("of");
+                                      if (parts.length > 1) {
+                                        repsStr = parts[1].replace("reps", "").trim();
+                                      }
+                                    }
+
+                                    exercises.push({
+                                      id: ex.id,
+                                      name: ex.name,
+                                      category: ex.category,
+                                      sets: setsStr,
+                                      reps: repsStr,
+                                      frequency: "Twice Daily",
+                                      instruction: ex.instruction
+                                    });
+                                    return { ...prev, exercises };
+                                  });
+                                }}
+                              >
+                                <option value="">-- Add Rehab Exercise --</option>
+                                {['Knee', 'Hip', 'Low Back', 'Shoulder', 'Neck', 'Wrist'].map(cat => (
+                                  <optgroup key={cat} label={cat}>
+                                    {exercisesDb
+                                      .filter(item => item.category === cat)
+                                      .map(item => (
+                                        <option key={item.id} value={item.id}>
+                                          {item.name}
+                                        </option>
+                                      ))}
+                                  </optgroup>
+                                ))}
+                              </select>
+                            </div>
                           </>
                         ) : (
                           <>
@@ -509,6 +642,25 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
                               <div className="flex flex-col gap-1 md:col-span-2">
                                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Follow-up</label>
                                 <p className="text-sm text-gray-700 leading-relaxed">{session.note.followup}</p>
+                              </div>
+                            )}
+
+                            {session.note.exercises && session.note.exercises.length > 0 && (
+                              <div className="flex flex-col gap-1 md:col-span-2 text-left">
+                                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><Activity className="w-3.5 h-3.5 text-teal" /> Prescribed Rehabilitation</label>
+                                <div className="flex flex-col gap-2 mt-1">
+                                  {session.note.exercises.map((ex, idx) => (
+                                    <div key={idx} className="bg-white border border-gray-150 rounded-xl p-3 shadow-xs flex flex-col gap-1">
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="font-semibold text-navy">{ex.name}</span>
+                                        <span className="text-[10px] font-semibold text-teal-dark bg-teal-light px-2 py-0.5 rounded">
+                                          {ex.sets} sets · {ex.reps} reps · {ex.frequency}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{ex.instruction}</p>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </>

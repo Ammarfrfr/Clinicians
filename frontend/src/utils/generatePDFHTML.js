@@ -9,6 +9,7 @@ export function generateClinicalNotePDF(note, patient = {}, doctor = {}, include
     prescription: true,
     followup: true,
     vitals: true,
+    exercises: true,
   };
   
   const { physicalLetterhead = false } = options;
@@ -56,6 +57,41 @@ export function generateClinicalNotePDF(note, patient = {}, doctor = {}, include
         </tr>`;
         })
         .join('')
+    : '';
+
+  const exArray = Array.isArray(note.exercises) ? note.exercises : [];
+  const exerciseRows = exArray
+    .map((ex, idx) => {
+      if (!ex) return '';
+      return `
+    <tr class="rx-row">
+      <td class="rx-num">${String(idx + 1).padStart(2, '0')}</td>
+      <td>
+        <div class="rx-name">${escapeHtml(ex.name)} <span style="font-size:10px;font-family:'DM Mono',monospace;color:#b0ac9f;margin-left:4px;">(${escapeHtml(ex.category)})</span></div>
+        <div class="rx-dose">Sets/Reps: ${escapeHtml(ex.sets || '3')} x ${escapeHtml(ex.reps || '10')}${ex.frequency ? ' — ' + escapeHtml(ex.frequency) : ''}</div>
+        <div style="font-size:11px;color:#6a6860;margin-top:4px;line-height:1.45;">${escapeHtml(ex.instruction)}</div>
+      </td>
+    </tr>`;
+    })
+    .join('');
+
+  const apiBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:7001';
+  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(`${apiBaseUrl}/api/share/exercises?ids=${exArray.map(e => e.id).join(',')}`)}`;
+
+  const exercisesSection = (sections.exercises !== false && exArray.length > 0)
+    ? `<div class="section" style="margin-top:20px;">
+      <div class="section-head"><div class="section-label">Exercises & Rehabilitation</div><div class="section-line"></div></div>
+      <table class="rx-table">
+        ${exerciseRows}
+      </table>
+      <div style="margin-top:16px;padding:12px;background:#faf9f6;border:1px dashed #e8e5de;border-radius:6px;display:flex;align-items:center;gap:14px;page-break-inside:avoid;">
+        <img src="${qrDataUrl}" style="width:70px;height:70px;border-radius:4px;border:1px solid #e8e5de;" alt="QR Code" />
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#0c0c0b;">Scan to watch exercise demonstrations</div>
+          <div style="font-size:10.5px;color:#6a6860;margin-top:2px;line-height:1.4;">Open your phone camera to watch visual looping exercise animations prescribed by the doctor.</div>
+        </div>
+      </div>
+    </div>`
     : '';
 
   const html = `
@@ -255,6 +291,8 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
         : ''
     }
 
+    ${exercisesSection}
+
   </div>
 
   ${
@@ -297,12 +335,38 @@ export async function downloadPDFFromHTML(htmlContent, filename = 'clinical-note
     doc.write(htmlContent);
     doc.close();
     
-    setTimeout(() => {
+    const printDoc = () => {
       iframe.contentWindow.print();
       setTimeout(() => {
         document.body.removeChild(iframe);
       }, 1000);
-    }, 500);
+    };
+
+    // Wait for all images (like the QR code) to load before initiating the print dialog
+    const images = iframe.contentWindow.document.querySelectorAll('img');
+    if (images.length === 0) {
+      setTimeout(printDoc, 500);
+    } else {
+      let loadedCount = 0;
+      const onImageLoad = () => {
+        loadedCount++;
+        if (loadedCount === images.length) {
+          setTimeout(printDoc, 200);
+        }
+      };
+      
+      images.forEach((img) => {
+        if (img.complete) {
+          onImageLoad();
+        } else {
+          img.addEventListener('load', onImageLoad);
+          img.addEventListener('error', onImageLoad); // don't hang print if an image fails
+        }
+      });
+      
+      // Safety fallback timeout in case load events fail to trigger
+      setTimeout(printDoc, 2500);
+    }
     
     return { success: true };
   } catch (error) {

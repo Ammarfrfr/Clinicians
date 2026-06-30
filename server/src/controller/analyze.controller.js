@@ -466,3 +466,60 @@ Return ONLY the final cleaned text for this section, with absolutely no introduc
   );
 });
 
+export const searchDrugsFromLLM = asyncHandler(async (req, res) => {
+  const { q } = req.query;
+  if (!q || q.trim().length < 2) {
+    return res.status(200).json(new ApiResponse(200, [], 'Empty query'));
+  }
+
+  const query = q.trim();
+
+  if (!process.env.GROQ_API_KEY) {
+    console.warn('GROQ_API_KEY is not configured for drug search');
+    return res.status(200).json(new ApiResponse(200, [], 'GROQ not configured'));
+  }
+
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+  const prompt = `You are a clinical medicine database search assistant.
+Find matching commercial pharmaceutical products (medications/drugs) available in the Indian/global market matching the search query: "${query}".
+The query can be a brand name (e.g. "Augmentin", "Dolo"), a generic name / composition (e.g. "Paracetamol"), or a combination of compounds (e.g. "tretinoin + glutathione").
+
+Generate up to 8 accurate matching options.
+For each option, provide:
+1. "name": The brand name of the product (e.g., "Glycomet 500", "Crocin", "Tretin-A"). If it's a generic compound without a major single brand, suggest a standard generic formulation name.
+2. "composition": The exact active ingredients and their strengths (e.g., "Tretinoin 0.025% + Glutathione 2%").
+3. "brand": The pharmaceutical manufacturer/company name that produces/markets it (e.g., "Cipla", "Abbott", "Sun Pharma", "GlaxoSmithKline").
+
+Return ONLY a valid JSON array of objects. Do not include markdown code block formatting (like \`\`\`json).
+Format:
+[
+  { "name": "Brand/Generic Name", "composition": "Active Ingredients and Strengths", "brand": "Manufacturer/Company Name" }
+]`;
+
+  try {
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+      max_tokens: 500,
+    });
+
+    let cleanText = response.choices[0].message.content.trim();
+    if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+    }
+    const drugsList = JSON.parse(cleanText);
+
+    return res.status(200).json(
+      new ApiResponse(200, drugsList, 'Drugs searched successfully')
+    );
+  } catch (err) {
+    console.error('LLM drug search failed:', err);
+    return res.status(200).json(
+      new ApiResponse(200, [], `Search failed: ${err.message}`)
+    );
+  }
+});
+
+

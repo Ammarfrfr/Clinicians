@@ -7,6 +7,8 @@ import { DrugSearchInput } from './DrugSearchInput.jsx';
 import { ExportModal } from './ExportModal.jsx';
 import { shareOnWhatsApp, generatePrescriptionMessage } from '../utils/whatsappHelper.js';
 import { checkDrugAllergy } from '../utils/allergyChecker.js';
+import exercisesDb from '../data/exercises.json';
+import { Activity } from 'lucide-react';
 
 export function NotePanel({ note, noteError, loading, patient, doctor, transcript, recordingId, onSave, onCancel, isOpenMobile, onCloseMobile, desktopWidth, template, lastVoiceCommand, setLastVoiceCommand }) {
   const [saving, setSaving] = useState(false);
@@ -20,6 +22,7 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
     diagnosis: '',
     prescription: [],
     followup: '',
+    exercises: [],
   });
   const [showExportModal, setShowExportModal] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState('');
@@ -46,13 +49,16 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
   // Reset edit state when note changes or patient changes
   useEffect(() => {
     if (note) {
-      setEditedNote(JSON.parse(JSON.stringify(note)));
+      const parsedNote = JSON.parse(JSON.stringify(note));
+      if (!parsedNote.exercises) parsedNote.exercises = [];
+      setEditedNote(parsedNote);
       setEditing(false);
     } else {
       // Clear values when note is null (no active session note)
       const initialNote = {
         prescription: [],
         followup: '',
+        exercises: [],
       };
       if (template && template.sections) {
         template.sections.forEach((s) => {
@@ -666,6 +672,234 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                     )}
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Compartment C — Exercises & Rehab (Printable) */}
+          <div className="p-4 rounded-xl border mb-3 bg-teal-light/5 border-teal/10 text-left">
+            <div className="flex items-center justify-between font-semibold text-sm text-navy mb-1">
+              <span className="flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-teal" />
+                Prescribed Rehabilitation
+              </span>
+              <span className="px-1.5 py-0.5 text-[9.5px] font-mono rounded font-semibold uppercase bg-teal-light text-teal-dark">Rx & Printed</span>
+            </div>
+            <div className="text-[11.5px] text-gray-500 mb-4">Prescribe standard orthopedic rehab exercises.</div>
+
+            {editing ? (
+              <div className="flex flex-col gap-3">
+                {/* Selected exercises list with sets/reps controls */}
+                {editedNote.exercises && editedNote.exercises.length > 0 && (
+                  <div className="flex flex-col gap-2 mb-2">
+                    {editedNote.exercises.map((ex, idx) => (
+                      <div key={idx} className="bg-white border border-gray-150 rounded-xl p-3 shadow-xs flex flex-col gap-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-navy">{ex.name} <span className="text-[9px] font-mono font-medium text-gray-400">({ex.category})</span></span>
+                          <button
+                            type="button"
+                            className="p-1 text-gray-400 hover:text-red-brand bg-transparent border-none cursor-pointer flex items-center justify-center"
+                            onClick={() => {
+                              setEditedNote(prev => ({
+                                ...prev,
+                                exercises: prev.exercises.filter((_, i) => i !== idx)
+                              }));
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase">Sets</label>
+                            <input
+                              type="text"
+                              value={ex.sets || ''}
+                              placeholder="e.g. 3"
+                              onChange={(e) => {
+                                setEditedNote(prev => {
+                                  const updated = [...prev.exercises];
+                                  updated[idx] = { ...updated[idx], sets: e.target.value };
+                                  return { ...prev, exercises: updated };
+                                });
+                              }}
+                              className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase">Reps</label>
+                            <input
+                              type="text"
+                              value={ex.reps || ''}
+                              placeholder="e.g. 10"
+                              onChange={(e) => {
+                                setEditedNote(prev => {
+                                  const updated = [...prev.exercises];
+                                  updated[idx] = { ...updated[idx], reps: e.target.value };
+                                  return { ...prev, exercises: updated };
+                                });
+                              }}
+                              className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-0.5 col-span-2">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase">Frequency</label>
+                            <input
+                              type="text"
+                              value={ex.frequency || ''}
+                              placeholder="e.g. Twice Daily"
+                              onChange={(e) => {
+                                setEditedNote(prev => {
+                                  const updated = [...prev.exercises];
+                                  updated[idx] = { ...updated[idx], frequency: e.target.value };
+                                  return { ...prev, exercises: updated };
+                                });
+                              }}
+                              className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new exercises dropdown & categories */}
+                <div className="flex flex-col gap-2 p-3 bg-gray-50 border border-gray-150 rounded-xl">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase">Prescribe Exercise</div>
+                  <select
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                    value=""
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      if (!selectedId) return;
+                      const ex = exercisesDb.find(item => item.id === selectedId);
+                      if (!ex) return;
+                      
+                      setEditedNote(prev => {
+                        const exercises = prev.exercises ? [...prev.exercises] : [];
+                        if (exercises.some(item => item.id === ex.id)) return prev;
+
+                        let setsStr = "3";
+                        let repsStr = "10";
+                        if (ex.defaultSetsReps.includes("sets")) {
+                          setsStr = ex.defaultSetsReps.split("sets")[0].trim();
+                        }
+                        if (ex.defaultSetsReps.includes("reps")) {
+                          const parts = ex.defaultSetsReps.split("of");
+                          if (parts.length > 1) {
+                            repsStr = parts[1].replace("reps", "").trim();
+                          }
+                        }
+
+                        exercises.push({
+                          id: ex.id,
+                          name: ex.name,
+                          category: ex.category,
+                          sets: setsStr,
+                          reps: repsStr,
+                          frequency: "Twice Daily",
+                          instruction: ex.instruction
+                        });
+                        return { ...prev, exercises };
+                      });
+                    }}
+                  >
+                    <option value="">-- Choose Exercise --</option>
+                    {['Knee', 'Hip', 'Low Back', 'Shoulder', 'Neck', 'Wrist'].map(cat => (
+                      <optgroup key={cat} label={cat}>
+                        {exercisesDb
+                          .filter(item => item.category === cat)
+                          .map(item => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  
+                  {/* Presets */}
+                  <div className="flex gap-1.5 flex-wrap mt-1">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase self-center mr-1">Presets:</span>
+                    <button
+                      type="button"
+                      className="px-2 py-0.5 text-[10px] font-semibold bg-white border border-gray-200 hover:bg-gray-50 rounded text-teal-dark cursor-pointer transition-all"
+                      onClick={() => {
+                        setEditedNote(prev => {
+                          const exercises = prev.exercises ? [...prev.exercises] : [];
+                          const kneePrescribed = ['short_arc_quads', 'quad_sets', 'knee_slides', 'ankle_pumps'];
+                          
+                          kneePrescribed.forEach(exId => {
+                            const ex = exercisesDb.find(item => item.id === exId);
+                            if (ex && !exercises.some(item => item.id === ex.id)) {
+                              exercises.push({
+                                id: ex.id,
+                                name: ex.name,
+                                category: ex.category,
+                                sets: "3",
+                                reps: "10",
+                                frequency: "Twice Daily",
+                                instruction: ex.instruction
+                              });
+                            }
+                          });
+                          return { ...prev, exercises };
+                        });
+                      }}
+                    >
+                      Knee Routine
+                    </button>
+                    <button
+                      type="button"
+                      className="px-2 py-0.5 text-[10px] font-semibold bg-white border border-gray-200 hover:bg-gray-50 rounded text-teal-dark cursor-pointer transition-all"
+                      onClick={() => {
+                        setEditedNote(prev => {
+                          const exercises = prev.exercises ? [...prev.exercises] : [];
+                          const backPrescribed = ['press_up_sphinx', 'knee_to_chest', 'cats_and_dogs'];
+                          
+                          backPrescribed.forEach(exId => {
+                            const ex = exercisesDb.find(item => item.id === exId);
+                            if (ex && !exercises.some(item => item.id === ex.id)) {
+                              exercises.push({
+                                id: ex.id,
+                                name: ex.name,
+                                category: ex.category,
+                                sets: "3",
+                                reps: "10",
+                                frequency: "Twice Daily",
+                                instruction: ex.instruction
+                              });
+                            }
+                          });
+                          return { ...prev, exercises };
+                        });
+                      }}
+                    >
+                      Low Back Routine
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {displayNote?.exercises && displayNote.exercises.length > 0 ? (
+                  displayNote.exercises.map((ex, idx) => (
+                    <div key={idx} className="bg-white border border-gray-100 rounded-xl p-3 shadow-xs text-left">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-navy">{ex.name}</span>
+                        <span className="text-[10px] font-semibold text-teal-dark bg-teal-light px-2 py-0.5 rounded">
+                          {ex.sets} sets · {ex.reps} reps · {ex.frequency}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1.5 leading-relaxed">{ex.instruction}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-gray-400 italic py-2 text-center">No rehabilitation exercises prescribed.</div>
+                )}
               </div>
             )}
           </div>

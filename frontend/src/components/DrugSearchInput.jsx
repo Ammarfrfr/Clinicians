@@ -1,17 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { searchDrugs } from '../utils/drugSearch.js';
+import { apiClient } from '../config.js';
 
 export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (CDSCO)...', onBlur, hideIcon = false }) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const wrapperRef = useRef(null);
   const debounceRef = useRef(null);
+  const queryRef = useRef(query);
 
   useEffect(() => {
     setQuery(value || '');
   }, [value]);
+
+  useEffect(() => {
+    queryRef.current = query;
+  }, [query]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -30,16 +37,58 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
     setActiveIndex(-1);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (val.trim().length >= 2) {
-        const matches = searchDrugs(val);
-        setResults(matches);
-        setShowDropdown(matches.length > 0);
+    debounceRef.current = setTimeout(async () => {
+      const qNormalized = val.trim();
+      if (qNormalized.length >= 2) {
+        // 1. Get local matches instantly
+        const localMatches = searchDrugs(qNormalized);
+        setResults(localMatches);
+        setShowDropdown(localMatches.length > 0);
+
+        // 2. Fetch server database matches via LLM
+        setLoading(true);
+        try {
+          const response = await apiClient.get(`/api/drugs/search?q=${encodeURIComponent(qNormalized)}`);
+          
+          if (queryRef.current.trim() === qNormalized) {
+            const serverMatches = response.data?.data || [];
+            if (serverMatches.length > 0) {
+              setResults((prev) => {
+                const combined = [...prev];
+                serverMatches.forEach((srvDrug) => {
+                  const isDuplicate = combined.some((locDrug) => {
+                    const nameMatch = locDrug.name.toLowerCase() === srvDrug.name.toLowerCase();
+                    const compMatch = locDrug.composition.toLowerCase() === srvDrug.composition.toLowerCase();
+                    const brandMatch = (locDrug.brand || '').toLowerCase() === (srvDrug.brand || '').toLowerCase();
+                    return nameMatch || (compMatch && brandMatch);
+                  });
+                  if (!isDuplicate) {
+                    combined.push({
+                      name: srvDrug.name,
+                      composition: srvDrug.composition,
+                      brand: srvDrug.brand,
+                      score: 50,
+                    });
+                  }
+                });
+                return combined;
+              });
+              setShowDropdown(true);
+            }
+          }
+        } catch (err) {
+          console.error('Error searching drugs on server:', err);
+        } finally {
+          if (queryRef.current.trim() === qNormalized) {
+            setLoading(false);
+          }
+        }
       } else {
         setResults([]);
         setShowDropdown(false);
+        setLoading(false);
       }
-    }, 200);
+    }, 300);
   };
 
   const handleSelect = (drug) => {
@@ -81,14 +130,14 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => results.length > 0 && setShowDropdown(true)}
+          onFocus={() => (results.length > 0 || loading) && setShowDropdown(true)}
           onBlur={onBlur}
           placeholder={placeholder}
           className="w-full text-xs border-none bg-transparent focus:outline-none placeholder:text-gray-400 p-0"
         />
       </div>
 
-      {showDropdown && (
+      {(showDropdown || loading) && (
         <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
           {results.map((drug, idx) => (
             <div
@@ -104,6 +153,14 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
               </div>
             </div>
           ))}
+          {loading && (
+            <div className="p-3 text-center text-xs font-semibold text-teal-dark bg-teal-light/10 flex items-center justify-center gap-1.5">
+              <svg className="animate-spin text-teal" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <circle cx="12" cy="12" r="10" strokeDasharray="16" />
+              </svg>
+              Searching database...
+            </div>
+          )}
         </div>
       )}
     </div>
