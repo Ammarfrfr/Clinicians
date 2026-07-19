@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { PatientBar } from './components/PatientBar';
@@ -11,17 +11,19 @@ import { AddPatientModal } from './AddPatientModal';
 import { EditPatientModal } from './EditPatientModal';
 import { apiClient } from './config.js';
 import { useRecorder } from './useRecorder';
-import { LandingPage } from './pages/LandingPage';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
 import { ReminderDashboard } from './components/ReminderDashboard';
 import { PatientFilesGrid } from './components/PatientFilesGrid';
 import { OnboardingModal } from './components/OnboardingModal';
-import { PrivacyPage } from './pages/PrivacyPage';
-import { TermsPage } from './pages/TermsPage';
-import { AdminDashboard } from './pages/AdminDashboard';
 import { NOTE_TEMPLATES, getTemplateForSpecialization, getAllTemplateOptions } from './data/noteTemplates.js';
 import { getPendingCount, syncPendingRecordings } from './utils/offlineQueue.js';
+
+// Lazy loaded page chunks
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('./pages/TermsPage').then(m => ({ default: m.TermsPage })));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 function App() {
   return (
@@ -715,51 +717,60 @@ function AppContent() {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={
-        currentUser ? (currentUser.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/transcribe" replace />) : <LandingPage onNavigate={(p) => navigate('/' + p)} />
-      } />
-      <Route path="/login" element={
-        currentUser ? (currentUser.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/transcribe" replace />) : <LoginPage onNavigate={(p) => navigate('/' + p)} onLoginSuccess={handleLoginSuccess} />
-      } />
-      <Route path="/register" element={
-        currentUser ? (currentUser.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/transcribe" replace />) : <RegisterPage onNavigate={(p) => navigate('/' + p)} onRegisterSuccess={handleLoginSuccess} />
-      } />
-      <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/terms" element={<TermsPage />} />
-      <Route path="/admin" element={
-        !currentUser ? <Navigate to="/login" replace /> :
-        currentUser.role === 'admin' ? <AdminDashboard onLogout={handleLogout} /> :
-        <Navigate to="/transcribe" replace />
-      } />
-      <Route path="/onboarding" element={
-        !currentUser ? <Navigate to="/login" replace /> :
-        currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-        currentUser.onboardingComplete ? <Navigate to="/transcribe" replace /> :
-        <div className="min-h-screen bg-warm-white flex items-center justify-center p-6">
-          <OnboardingModal isOpen={true} user={currentUser} onOnboardingSuccess={handleOnboardingSuccess} isInline={true} />
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#fafafc] flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-slate-800 animate-spin" />
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Scribologist...</span>
         </div>
-      } />
-      <Route path="/transcribe" element={
-        !currentUser ? <Navigate to="/login" replace /> :
-        currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-        !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
-        renderDashboard()
-      } />
-      <Route path="/transcribe/:patientId" element={
-        !currentUser ? <Navigate to="/login" replace /> :
-        currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-        !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
-        renderDashboard()
-      } />
-      <Route path="/transcribe/:patientId/:tab" element={
-        !currentUser ? <Navigate to="/login" replace /> :
-        currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-        !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
-        renderDashboard()
-      } />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </div>
+    }>
+      <Routes>
+        <Route path="/" element={
+          currentUser ? (currentUser.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/transcribe" replace />) : <LandingPage onNavigate={(p) => navigate('/' + p)} />
+        } />
+        <Route path="/login" element={
+          currentUser ? (currentUser.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/transcribe" replace />) : <LoginPage onNavigate={(p) => navigate('/' + p)} onLoginSuccess={handleLoginSuccess} />
+        } />
+        <Route path="/register" element={
+          currentUser ? (currentUser.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/transcribe" replace />) : <RegisterPage onNavigate={(p) => navigate('/' + p)} onRegisterSuccess={handleLoginSuccess} />
+        } />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/admin" element={
+          !currentUser ? <Navigate to="/login" replace /> :
+          currentUser.role === 'admin' ? <AdminDashboard onLogout={handleLogout} /> :
+          <Navigate to="/transcribe" replace />
+        } />
+        <Route path="/onboarding" element={
+          !currentUser ? <Navigate to="/login" replace /> :
+          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+          currentUser.onboardingComplete ? <Navigate to="/transcribe" replace /> :
+          <div className="min-h-screen bg-warm-white flex items-center justify-center p-6">
+            <OnboardingModal isOpen={true} user={currentUser} onOnboardingSuccess={handleOnboardingSuccess} isInline={true} />
+          </div>
+        } />
+        <Route path="/transcribe" element={
+          !currentUser ? <Navigate to="/login" replace /> :
+          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+          !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
+          renderDashboard()
+        } />
+        <Route path="/transcribe/:patientId" element={
+          !currentUser ? <Navigate to="/login" replace /> :
+          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+          !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
+          renderDashboard()
+        } />
+        <Route path="/transcribe/:patientId/:tab" element={
+          !currentUser ? <Navigate to="/login" replace /> :
+          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+          !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
+          renderDashboard()
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

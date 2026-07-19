@@ -8,6 +8,7 @@ import { ExportModal } from './ExportModal.jsx';
 import { shareOnWhatsApp, generatePrescriptionMessage } from '../utils/whatsappHelper.js';
 import { checkDrugAllergy } from '../utils/allergyChecker.js';
 import exercisesDb from '../data/exercises.json';
+import { getPhotoUrls } from '../utils/exercisePhotos.js';
 import { Activity } from 'lucide-react';
 
 export function NotePanel({ note, noteError, loading, patient, doctor, transcript, recordingId, onSave, onCancel, isOpenMobile, onCloseMobile, desktopWidth, template, lastVoiceCommand, setLastVoiceCommand }) {
@@ -886,7 +887,9 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
             ) : (
               <div className="flex flex-col gap-2">
                 {displayNote?.exercises && displayNote.exercises.length > 0 ? (
-                  displayNote.exercises.map((ex, idx) => (
+                  displayNote.exercises.map((ex, idx) => {
+                    const photos = getPhotoUrls(ex.id);
+                    return (
                     <div key={idx} className="bg-white border border-gray-100 rounded-xl p-3 shadow-xs text-left">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-semibold text-navy">{ex.name}</span>
@@ -895,8 +898,27 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1.5 leading-relaxed">{ex.instruction}</div>
+                      {photos && (
+                        <details className="mt-2">
+                          <summary className="text-[10px] font-semibold text-teal-dark cursor-pointer select-none flex items-center gap-1 hover:text-teal transition-colors" style={{listStyle:'none'}}>
+                            <span>📷</span> {photos.exact ? 'See Real Demo' : 'See Similar Exercise'}
+                          </summary>
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            <div className="flex flex-col items-center gap-1">
+                              <img src={photos.start} alt="Start position" className="w-full rounded-lg border border-gray-100" style={{aspectRatio:'3/4', objectFit:'cover', background:'#f5f3ee'}} loading="lazy" />
+                              <span className="text-[8px] font-mono text-gray-400 uppercase">Start</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                              <img src={photos.end} alt="End position" className="w-full rounded-lg border border-gray-100" style={{aspectRatio:'3/4', objectFit:'cover', background:'#f5f3ee'}} loading="lazy" />
+                              <span className="text-[8px] font-mono text-gray-400 uppercase">End</span>
+                            </div>
+                          </div>
+                          {!photos.exact && <div className="text-[9px] text-gray-400 italic mt-1.5 text-center">💡 Showing a similar exercise for reference</div>}
+                        </details>
+                      )}
                     </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-xs text-gray-400 italic py-2 text-center">No rehabilitation exercises prescribed.</div>
                 )}

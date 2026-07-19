@@ -20,7 +20,7 @@ export const uploadPatientFile = asyncHandler(async (req, res) => {
 
   try {
     // Upload buffer to Cloudinary
-    const folder = `qalam_patients/${req.user._id}/${id}`;
+    const folder = `scribologist_patients/${req.user._id}/${id}`;
     const uploadResult = await uploadToCloudinary(req.file.buffer, folder);
 
     // Save to patient schema

@@ -31,7 +31,7 @@ export function TermsPage() {
         </div>
 
         <p className="text-sm text-gray-600 leading-relaxed">
-          Welcome to Qalam. By registering for or using our AI-assisted medical scribe platform, web app, or standalone PWA, you agree to comply with and be bound by the following Terms of Service.
+          Welcome to Scribologist. By registering for or using our AI-assisted medical scribe platform, web app, or standalone PWA, you agree to comply with and be bound by the following Terms of Service.
         </p>
 
         <section className="flex flex-col gap-3">
@@ -41,7 +41,7 @@ export function TermsPage() {
           <div className="p-4 bg-red-brand-light border border-red-brand/10 rounded-xl">
             <p className="text-xs text-red-brand leading-relaxed font-semibold uppercase tracking-wider mb-2">Crucial Professional Notice:</p>
             <p className="text-sm text-gray-700 leading-relaxed">
-              Qalam is an AI-assisted documentation utility. It does <strong>not</strong> practice medicine, deliver clinical diagnoses, prescribe drug courses, or replace professional medical judgment. 
+              Scribologist is an AI-assisted documentation utility. It does <strong>not</strong> practice medicine, deliver clinical diagnoses, prescribe drug courses, or replace professional medical judgment. 
               <strong>The clinician holds sole responsibility for reviewing, updating, and verifying all generated transcripts, clinical notes, prescriptions, diagnostics, and vitals before finalizing, printing, or sharing them with patients.</strong> We accept no liability for clinical decisions made based on outputs.
             </p>
           </div>
@@ -52,7 +52,7 @@ export function TermsPage() {
             <UserCheck className="w-4 h-4 text-teal" /> 2. Clinician Account & Professional Credentials
           </h2>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Qalam accounts are only available to verified, practicing medical professionals. During onboarding, you must provide your true legal name, medical license number, and qualification. You are responsible for maintaining the confidentiality of your account credentials and represent that all information provided is accurate and current.
+            Scribologist accounts are only available to verified, practicing medical professionals. During onboarding, you must provide your true legal name, medical license number, and qualification. You are responsible for maintaining the confidentiality of your account credentials and represent that all information provided is accurate and current.
           </p>
         </section>
 
@@ -71,14 +71,14 @@ export function TermsPage() {
             For any queries or legal notices, please write to:
           </p>
           <p className="text-sm text-navy font-semibold">
-            Email: legal@qalam.medical
+            Email: legal@scribologist.ai
           </p>
         </section>
       </main>
 
       {/* Mini Footer */}
       <footer className="bg-white border-t border-gray-150 py-6 px-6 text-center text-xs text-gray-400 w-full mt-auto">
-        <p>&copy; {new Date().getFullYear()} Qalam Medical. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Scribologist Medical. All rights reserved.</p>
       </footer>
     </div>
   );

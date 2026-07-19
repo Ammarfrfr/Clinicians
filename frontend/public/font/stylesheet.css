@@ -1,0 +1,130 @@
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-Medium.eot');
+    src: local('Kalice-Trial Medium'), local('Kalice-Trial-Medium'),
+        url('Kalice-Trial-Medium.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-Medium.woff2') format('woff2'),
+        url('Kalice-Trial-Medium.woff') format('woff'),
+        url('Kalice-Trial-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-ExtraBold.eot');
+    src: local('Kalice-Trial ExtraBold'), local('Kalice-Trial-ExtraBold'),
+        url('Kalice-Trial-ExtraBold.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-ExtraBold.woff2') format('woff2'),
+        url('Kalice-Trial-ExtraBold.woff') format('woff'),
+        url('Kalice-Trial-ExtraBold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-Italic.eot');
+    src: local('Kalice-Trial Italic'), local('Kalice-Trial-Italic'),
+        url('Kalice-Trial-Italic.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-Italic.woff2') format('woff2'),
+        url('Kalice-Trial-Italic.woff') format('woff'),
+        url('Kalice-Trial-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-BlackItalic.eot');
+    src: local('Kalice-Trial Black Italic'), local('Kalice-Trial-BlackItalic'),
+        url('Kalice-Trial-BlackItalic.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-BlackItalic.woff2') format('woff2'),
+        url('Kalice-Trial-BlackItalic.woff') format('woff'),
+        url('Kalice-Trial-BlackItalic.ttf') format('truetype');
+    font-weight: 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-Black.eot');
+    src: local('Kalice-Trial Black'), local('Kalice-Trial-Black'),
+        url('Kalice-Trial-Black.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-Black.woff2') format('woff2'),
+        url('Kalice-Trial-Black.woff') format('woff'),
+        url('Kalice-Trial-Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-ExtraBoldItalic.eot');
+    src: local('Kalice-Trial ExtraBold Italic'), local('Kalice-Trial-ExtraBoldItalic'),
+        url('Kalice-Trial-ExtraBoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-ExtraBoldItalic.woff2') format('woff2'),
+        url('Kalice-Trial-ExtraBoldItalic.woff') format('woff'),
+        url('Kalice-Trial-ExtraBoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-BoldItalic.eot');
+    src: local('Kalice-Trial Bold Italic'), local('Kalice-Trial-BoldItalic'),
+        url('Kalice-Trial-BoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-BoldItalic.woff2') format('woff2'),
+        url('Kalice-Trial-BoldItalic.woff') format('woff'),
+        url('Kalice-Trial-BoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-Bold.eot');
+    src: local('Kalice-Trial Bold'), local('Kalice-Trial-Bold'),
+        url('Kalice-Trial-Bold.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-Bold.woff2') format('woff2'),
+        url('Kalice-Trial-Bold.woff') format('woff'),
+        url('Kalice-Trial-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-Regular.eot');
+    src: local('Kalice-Trial Regular'), local('Kalice-Trial-Regular'),
+        url('Kalice-Trial-Regular.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-Regular.woff2') format('woff2'),
+        url('Kalice-Trial-Regular.woff') format('woff'),
+        url('Kalice-Trial-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Kalice-Trial';
+    src: url('Kalice-Trial-MediumItalic.eot');
+    src: local('Kalice-Trial Medium Italic'), local('Kalice-Trial-MediumItalic'),
+        url('Kalice-Trial-MediumItalic.eot?#iefix') format('embedded-opentype'),
+        url('Kalice-Trial-MediumItalic.woff2') format('woff2'),
+        url('Kalice-Trial-MediumItalic.woff') format('woff'),
+        url('Kalice-Trial-MediumItalic.ttf') format('truetype');
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+}
+

@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function Sidebar({ patients, activePatientId, onSelectPatient, onNewPatient, mobileOpen }) {
   const [search, setSearch] = useState('');
+  const [visibleCount, setVisibleCount] = useState(15);
+
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [search]);
 
   const filteredPatients = patients.filter((p) => {
     if (!search.trim()) return true;
@@ -48,13 +53,21 @@ export function Sidebar({ patients, activePatientId, onSelectPatient, onNewPatie
         <div className="text-[11px] font-mono uppercase text-white/40 tracking-wider font-medium">Patients</div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-1.5 pb-5">
+      <div 
+        className="flex-1 overflow-y-auto px-1.5 pb-5"
+        onScroll={(e) => {
+          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+          if (scrollTop + clientHeight >= scrollHeight - 20) {
+            setVisibleCount((prev) => Math.min(prev + 15, filteredPatients.length));
+          }
+        }}
+      >
         {filteredPatients.length === 0 && (
           <div className="text-center text-white/30 text-sm py-7 px-2.5">
             {search ? 'No patients match your search' : 'No patients yet'}
           </div>
         )}
-        {filteredPatients.map((patient) => (
+        {filteredPatients.slice(0, visibleCount).map((patient) => (
           <div
             key={patient._id}
             className={`flex items-center gap-3 py-2.5 px-3.5 rounded-xl cursor-pointer transition-all duration-150 mb-0.5 hover:bg-white/[0.03] ${activePatientId === patient._id ? 'bg-white/[0.06]' : ''}`}

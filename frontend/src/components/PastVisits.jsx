@@ -22,6 +22,30 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
   const [editedNote, setEditedNote] = useState(null);
   const [savingEditId, setSavingEditId] = useState(null);
   const [selectedTag, setSelectedTag] = useState('All');
+  const [visibleCount, setVisibleCount] = useState(10);
+
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [patientId, selectedTag]);
+
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const el = e.target;
+      if (el.scrollHeight - el.scrollTop <= el.clientHeight + 100) {
+        setVisibleCount((prev) => Math.min(prev + 10, filteredSessions.length));
+      }
+    };
+    
+    const mainEl = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
+    if (mainEl) {
+      mainEl.addEventListener('scroll', handleScroll);
+    }
+    return () => {
+      if (mainEl) {
+        mainEl.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [filteredSessions.length]);
 
   // Fetch when patientId changes, when a new recording is created, or when note is saved/updated
   useEffect(() => {
@@ -213,7 +237,7 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
             <p>No past visits match the "{selectedTag}" filter.</p>
           </div>
         ) : (
-          filteredSessions.map((session) => (
+          filteredSessions.slice(0, visibleCount).map((session) => (
             <div key={session._id} className="border border-gray-150 rounded-xl bg-white overflow-hidden shadow-xs hover:border-teal/30 transition-all">
               {/* Session Card Header */}
               <div
@@ -731,6 +755,14 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
               )}
             </div>
           ))
+        )}
+        {filteredSessions.length > visibleCount && (
+          <button 
+            className="w-full mt-2 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold text-xs rounded-xl shadow-xs transition-all border border-gray-200 uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+            onClick={() => setVisibleCount((prev) => Math.min(prev + 10, filteredSessions.length))}
+          >
+            <span>Load More Visits ({filteredSessions.length - visibleCount} remaining)</span>
+          </button>
         )}
       </div>
 

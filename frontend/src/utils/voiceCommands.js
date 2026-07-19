@@ -1,18 +1,17 @@
 /**
- * Voice Command Parser for Qalam.
+ * Voice Command Parser for Scribologist.
  *
- * Detects wake-word "qalam" (with fuzzy matching for common
+ * Detects wake-word "scribologist" (with fuzzy matching for common
  * speech-to-text misinterpretations) followed by a command keyword.
  *
  * Usage:
- *   const result = parseVoiceCommand("qalam stop recording");
- *   // → { command: 'stop', args: '', matchedText: 'qalam stop' }
+ *   const result = parseVoiceCommand("scribologist stop recording");
+ *   // → { command: 'stop', args: '', matchedText: 'scribologist stop' }
  */
 
-// Common misinterpretations of "Qalam" by speech recognition
+// Common misinterpretations of "Scribologist" by speech recognition
 const WAKE_WORDS = [
-  'qalam', 'kalam', 'column', 'qualm', 'kadam',
-  'colum', 'calm', 'klam', 'qalaam', 'callum',
+  'scribologist', 'scribe', 'scribology', 'scribble', 'psychologist', 'tribologist',
 ];
 
 const WAKE_PATTERN = new RegExp(
@@ -21,7 +20,7 @@ const WAKE_PATTERN = new RegExp(
 );
 
 /**
- * Parse a transcript string for a Qalam voice command.
+ * Parse a transcript string for a Scribologist voice command.
  * Returns null if no command is found.
  *
  * @param {string} text - The transcript text (interim or final) to scan.

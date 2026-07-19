@@ -1,3 +1,3 @@
-const DB_NAME = "qalam"
+const DB_NAME = "scribologist"
 
 export { DB_NAME }

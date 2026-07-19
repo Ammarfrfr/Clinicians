@@ -7,7 +7,7 @@
  * Background Sync, this module provides manual sync capabilities.
  */
 
-const DB_NAME = 'qalam-offline';
+const DB_NAME = 'scribologist-offline';
 const DB_VERSION = 1;
 const STORE_NAME = 'pending-recordings';
 

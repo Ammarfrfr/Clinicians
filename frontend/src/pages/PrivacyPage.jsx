@@ -31,7 +31,7 @@ export function PrivacyPage() {
         </div>
 
         <p className="text-sm text-gray-600 leading-relaxed">
-          At Qalam, we recognize that patient confidentiality and data security are the cornerstones of clinical practice. This Privacy Policy describes how Qalam Medical ("we", "us", or "our") collects, uses, processes, and stores information when you use our AI scribe website, standalone PWA, and backend services.
+          At Scribologist, we recognize that patient confidentiality and data security are the cornerstones of clinical practice. This Privacy Policy describes how Scribologist Medical ("we", "us", or "our") collects, uses, processes, and stores information when you use our AI scribe website, standalone PWA, and backend services.
         </p>
 
         <section className="flex flex-col gap-3">
@@ -39,8 +39,8 @@ export function PrivacyPage() {
             <Lock className="w-4 h-4 text-teal" /> 1. Compliance with Indian Healthcare Regulations
           </h2>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Qalam is designed to comply with the <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong> of India, and the guidelines set forth by the National Medical Commission (NMC). 
-            As a clinician, you are the Data Fiduciary under the DPDP Act, and Qalam acts as the Data Processor. It is your professional responsibility to obtain appropriate consent from patients before recording consultations.
+            Scribologist is designed to comply with the <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong> of India, and the guidelines set forth by the National Medical Commission (NMC). 
+            As a clinician, you are the Data Fiduciary under the DPDP Act, and Scribologist acts as the Data Processor. It is your professional responsibility to obtain appropriate consent from patients before recording consultations.
           </p>
         </section>
 
@@ -70,14 +70,14 @@ export function PrivacyPage() {
             For questions, concerns, or requests regarding data privacy, please contact our support desk:
           </p>
           <p className="text-sm text-navy font-semibold">
-            Email: privacy@qalam.medical
+            Email: privacy@scribologist.ai
           </p>
         </section>
       </main>
 
       {/* Mini Footer */}
       <footer className="bg-white border-t border-gray-150 py-6 px-6 text-center text-xs text-gray-400 w-full mt-auto">
-        <p>&copy; {new Date().getFullYear()} Qalam Medical. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Scribologist Medical. All rights reserved.</p>
       </footer>
     </div>
   );

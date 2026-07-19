@@ -99,7 +99,7 @@ export function generateClinicalNotePDF(note, patient = {}, doctor = {}, include
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Qalam Clinical Note - ${escapeHtml(patient.firstName || 'Patient')} ${escapeHtml(patient.lastName || '')}</title>
+<title>Scribologist Clinical Note - ${escapeHtml(patient.firstName || 'Patient')} ${escapeHtml(patient.lastName || '')}</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -169,7 +169,7 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
       : `
   <div class="doc-header">
     <div>
-      <div class="doc-logo">Qalam<span>.</span></div>
+      <div class="doc-logo">Scribologist<span>.</span></div>
       <div class="doc-tagline">AI Medical Scribe · Clinical Note</div>
     </div>
     <div class="doc-meta">
@@ -308,7 +308,7 @@ body{background:#e8e5de;font-family:'DM Sans',sans-serif;padding:40px;display:fl
     </div>
     <div style="text-align:right;">
       <div class="footer-note">Generated: ${formattedDate}</div>
-      <div class="footer-powered">Powered by <span>Qalam AI</span> · Doctor Reviewed</div>
+      <div class="footer-powered">Powered by <span>Scribologist AI</span> · Doctor Reviewed</div>
     </div>
   </div>
   `

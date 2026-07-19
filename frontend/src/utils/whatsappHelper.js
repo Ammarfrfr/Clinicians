@@ -28,7 +28,7 @@ export function generatePrescriptionMessage(patient, doctor, note) {
   const doctorName = doctor?.profile?.name || 'Your Doctor';
   const hospitalName = doctor?.profile?.hospital || '';
   
-  let msg = `*Qalam Treatment Plan*\n`;
+  let msg = `*Scribologist Treatment Plan*\n`;
   msg += `------------------------------------\n`;
   msg += `*Patient Name:* ${patientName}\n`;
   msg += `*Doctor:* ${doctorName}\n`;

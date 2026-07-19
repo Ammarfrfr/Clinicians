@@ -13,7 +13,7 @@ cloudinary.config({
  * @param {String} folder 
  * @returns {Promise}
  */
-export const uploadToCloudinary = (fileBuffer, folder = 'qalam_patients') => {
+export const uploadToCloudinary = (fileBuffer, folder = 'scribologist_patients') => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       { folder },

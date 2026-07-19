@@ -51,7 +51,7 @@ export function ReminderDashboard({ patients, doctor }) {
       month: 'short',
     });
 
-    let msg = `*Qalam Appointment Reminder*\n`;
+    let msg = `*Scribologist Appointment Reminder*\n`;
     msg += `------------------------------------\n`;
     msg += `Dear *${patientName}*,\n\n`;
     msg += `This is a friendly reminder for your upcoming follow-up appointment with *Dr. ${docName}*.\n\n`;

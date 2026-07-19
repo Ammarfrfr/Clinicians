@@ -5,6 +5,8 @@ import { ApiResponse } from '../Utils/ApiResponse.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getAnimationCSS, getExerciseSVG } from './exerciseAnimations.js';
+import { getPhotoHTML } from './exercisePhotoMap.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -171,7 +173,7 @@ body{background:#f8f6f1;font-family:'DM Sans',sans-serif;padding:24px;display:fl
       <div class="sig-qual">${escapeHtml(docQual)}</div>
     </div>
     <div>
-      <div class="powered">Powered by <span>Qalam AI</span></div>
+      <div class="powered">Powered by <span>Scribologist AI</span></div>
     </div>
   </div>
 </div>
@@ -200,7 +202,7 @@ export const generateShareableLink = asyncHandler(async (req, res) => {
   // Upload to Cloudinary as raw HTML
   const timestamp = Date.now();
   const patientSlug = (patient?.firstName || 'patient').toLowerCase().replace(/\s+/g, '_');
-  const publicId = `qalam_prescriptions/${req.user._id}/${patientSlug}_${timestamp}`;
+  const publicId = `scribologist_prescriptions/${req.user._id}/${patientSlug}_${timestamp}`;
 
   try {
     const result = await new Promise((resolve, reject) => {
@@ -262,149 +264,224 @@ export const getSharedExercisesPage = asyncHandler(async (req, res) => {
     return res.status(404).send('<h1>Prescribed exercises not found</h1>');
   }
 
-  // Generate HTML page with CSS animations
+  // Generate HTML page with CSS animations and photo toggles
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rehab & Exercise Routine</title>
+<title>Rehab & Exercise Routine — Scribologist</title>
+<meta name="description" content="Your personalized rehabilitation exercise routine with visual demonstrations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #faf9f5; font-family: 'DM Sans', sans-serif; color: #1a1a18; padding: 16px; display: flex; justify-content: center; min-height: 100vh; }
+  body { 
+    background: #f5f4f0; 
+    font-family: 'DM Sans', sans-serif; 
+    color: #1a1a18; 
+    padding: 16px; 
+    display: flex; 
+    justify-content: center; 
+    min-height: 100vh; 
+  }
   .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 16px; }
-  .header { text-align: center; padding: 24px 16px 12px; }
-  .logo { font-size: 20px; font-weight: 700; color: #0ea5a0; letter-spacing: 0.5px; }
-  .logo span { color: #1a1a18; }
-  .title { font-size: 22px; font-weight: 700; color: #0c0c0b; margin-top: 6px; }
-  .subtitle { font-size: 12px; font-family: 'DM Mono', monospace; color: #b0ac9f; text-transform: uppercase; margin-top: 2px; }
-  .card { background: #fff; border-radius: 16px; border: 1px solid #f0ede4; box-shadow: 0 4px 16px rgba(0,0,0,0.03); overflow: hidden; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  
+  .header { 
+    text-align: center; 
+    padding: 28px 16px 16px; 
+    background: linear-gradient(135deg, #0ea5a0 0%, #0b8480 100%);
+    border-radius: 20px;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(14,165,160,0.2);
+  }
+  .logo { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; opacity: 0.9; }
+  .title { font-size: 24px; font-weight: 700; margin-top: 6px; }
+  .subtitle { 
+    font-size: 11px; font-family: 'DM Mono', monospace; 
+    opacity: 0.7; text-transform: uppercase; 
+    margin-top: 4px; letter-spacing: 1px; 
+  }
+  .exercise-count {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.5px;
+  }
+  
+  .card { 
+    background: #fff; 
+    border-radius: 18px; 
+    border: 1px solid #eeebe4; 
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04); 
+    overflow: hidden; 
+    padding: 0; 
+    display: flex; 
+    flex-direction: column; 
+  }
+  .card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
   .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-  .ex-tag { font-size: 9px; font-family: 'DM Mono', monospace; padding: 3px 8px; border-radius: 4px; background: #e6f6f5; border: 1px solid #b2e0dd; color: #0b8480; text-transform: uppercase; font-weight: 500; }
-  .ex-name { font-size: 16px; font-weight: 600; color: #0c0c0b; margin-top: 4px; }
-  .ex-instructions { font-size: 13px; color: #6a6860; line-height: 1.6; }
-  
-  /* Visual Animation Box */
-  .animation-box { width: 100%; height: 160px; background: #faf9f6; border-radius: 12px; border: 1px dashed #e8e5de; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-  
-  /* CSS Animations for different categories */
-  .anim-knee { position: relative; width: 120px; height: 120px; }
-  .anim-knee .thigh { position: absolute; width: 50px; height: 8px; background: #b0ac9f; border-radius: 4px; left: 25px; top: 55px; transform: rotate(15deg); }
-  .anim-knee .shin { position: absolute; width: 45px; height: 8px; background: #0ea5a0; border-radius: 4px; left: 70px; top: 68px; transform-origin: left center; animation: kneeBend 3s infinite ease-in-out; }
-  .anim-knee .joint { position: absolute; width: 12px; height: 12px; background: #1a1a18; border-radius: 50%; left: 68px; top: 63px; }
-  
-  @keyframes kneeBend {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-75deg); }
+  .ex-tag { 
+    font-size: 9px; font-family: 'DM Mono', monospace; 
+    padding: 3px 10px; border-radius: 20px; 
+    background: #e6f6f5; border: 1px solid #b2e0dd; 
+    color: #0b8480; text-transform: uppercase; font-weight: 500; 
+    letter-spacing: 0.5px;
   }
-
-  .anim-hip { position: relative; width: 120px; height: 120px; }
-  .anim-hip .pelvis { position: absolute; width: 18px; height: 18px; background: #1a1a18; border-radius: 50%; left: 30px; top: 50px; }
-  .anim-hip .leg { position: absolute; width: 65px; height: 8px; background: #0ea5a0; border-radius: 4px; left: 40px; top: 55px; transform-origin: left center; animation: hipRaise 3s infinite ease-in-out; }
+  .ex-name { font-size: 17px; font-weight: 600; color: #0c0c0b; margin-top: 6px; line-height: 1.3; }
+  .ex-instructions { font-size: 13px; color: #6a6860; line-height: 1.65; }
+  .ex-instructions strong { color: #3a3834; font-weight: 600; }
   
-  @keyframes hipRaise {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-35deg); }
+  /* ═══ Animation Box ═══ */
+  .animation-box { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 16px 12px; 
+    background: linear-gradient(135deg, #faf9f5 0%, #f5f3ee 100%); 
+    border-top: 1px solid #f0ede4;
+    border-bottom: 1px solid #f0ede4;
   }
-
-  .anim-lowback { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
-  .anim-lowback svg { width: 100px; height: 80px; }
-  .anim-lowback path { fill: none; stroke: #0ea5a0; stroke-width: 5; stroke-linecap: round; animation: backArch 3s infinite ease-in-out; }
+  .animation-box svg { 
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.06));
+  }
   
-  @keyframes backArch {
-    0%, 100% { d: path("M 10 50 Q 50 50 90 50"); }
-    50% { d: path("M 10 50 Q 50 20 90 50"); }
+  /* ═══ Photo Toggle (CSS-only) ═══ */
+  .photo-toggle-section { padding: 0 20px 16px; }
+  .photo-checkbox { display: none; }
+  .photo-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    color: #0b8480;
+    background: #e6f6f5;
+    border: 1px solid #b2e0dd;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
   }
-
-  .anim-shoulder { position: relative; width: 120px; height: 120px; }
-  .anim-shoulder .body-block { position: absolute; width: 24px; height: 50px; background: #e8e5de; border-radius: 4px; left: 35px; top: 35px; }
-  .anim-shoulder .arm { position: absolute; width: 50px; height: 8px; background: #0ea5a0; border-radius: 4px; left: 45px; top: 40px; transform-origin: left center; animation: armSwing 3s infinite ease-in-out; }
-  .anim-shoulder .joint { position: absolute; width: 10px; height: 10px; background: #1a1a18; border-radius: 50%; left: 40px; top: 39px; }
+  .photo-toggle-btn:hover { background: #d0f0ee; }
+  .photo-toggle-btn:active { transform: scale(0.97); }
   
-  @keyframes armSwing {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-90deg); }
+  .photo-panel {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+    margin-top: 0;
   }
-
-  .anim-neck { position: relative; width: 120px; height: 120px; }
-  .anim-neck .chest { position: absolute; width: 45px; height: 25px; background: #e8e5de; border-radius: 4px; left: 38px; top: 70px; }
-  .anim-neck .head { position: absolute; width: 26px; height: 26px; background: #0ea5a0; border-radius: 50%; left: 47px; top: 38px; transform-origin: center bottom; animation: headTilt 3s infinite ease-in-out; }
+  .photo-checkbox:checked ~ .photo-panel {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 12px;
+  }
+  .photo-checkbox:checked ~ .photo-toggle-btn {
+    background: #0b8480;
+    color: #fff;
+    border-color: #0b8480;
+  }
   
-  @keyframes headTilt {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(20deg); }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
-
-  .anim-wrist { position: relative; width: 120px; height: 120px; }
-  .anim-wrist .arm { position: absolute; width: 55px; height: 10px; background: #e8e5de; border-radius: 3px; left: 20px; top: 55px; }
-  .anim-wrist .hand { position: absolute; width: 35px; height: 8px; background: #0ea5a0; border-radius: 3px; left: 72px; top: 56px; transform-origin: left center; animation: wristFlex 3s infinite ease-in-out; }
+  .photo-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .photo-card img {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #eeebe4;
+    object-fit: cover;
+    aspect-ratio: 3/4;
+    background: #f5f3ee;
+  }
+  .photo-label {
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    color: #b0ac9f;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .photo-note {
+    margin-top: 8px;
+    font-size: 10px;
+    color: #b0ac9f;
+    text-align: center;
+    font-style: italic;
+  }
   
-  @keyframes wristFlex {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(45deg); }
-  }
+  ${getAnimationCSS()}
 
-  .footer { text-align: center; padding: 24px 16px; font-size: 11px; font-family: 'DM Mono', monospace; color: #b0ac9f; }
+  .footer { 
+    text-align: center; padding: 28px 16px; 
+    font-size: 11px; font-family: 'DM Mono', monospace; 
+    color: #b0ac9f; line-height: 1.7;
+  }
   .footer span { color: #0ea5a0; font-weight: 500; }
+  .footer-disclaimer {
+    margin-top: 8px;
+    font-size: 9px;
+    color: #d5d0c8;
+  }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <div class="logo">Qa<span>lam Rehab</span></div>
-    <div class="title">Prescribed Exercises</div>
-    <div class="subtitle">Personalized Routine</div>
+    <div class="logo">Scribologist Rehab</div>
+    <div class="title">Your Exercise Routine</div>
+    <div class="subtitle">Prescribed by Your Doctor</div>
+    <div class="exercise-count">${prescribedExercises.length} exercise${prescribedExercises.length > 1 ? 's' : ''} prescribed</div>
   </div>
 
-  ${prescribedExercises.map(ex => {
-    let animClass = 'anim-knee';
-    let animHtml = '<div class="thigh"></div><div class="shin"></div><div class="joint"></div>';
+  ${prescribedExercises.map((ex, idx) => {
+    const svgContent = getExerciseSVG(ex.id);
+    const photoHTML = getPhotoHTML(ex.id);
     
-    const cat = ex.category.toLowerCase();
-    if (cat === 'hip') {
-      animClass = 'anim-hip';
-      animHtml = '<div class="pelvis"></div><div class="leg"></div>';
-    } else if (cat === 'low back') {
-      animClass = 'anim-lowback';
-      animHtml = '<svg><path d="M 10 50 Q 50 50 90 50" /></svg>';
-    } else if (cat === 'shoulder') {
-      animClass = 'anim-shoulder';
-      animHtml = '<div class="body-block"></div><div class="arm"></div><div class="joint"></div>';
-    } else if (cat === 'neck') {
-      animClass = 'anim-neck';
-      animHtml = '<div class="chest"></div><div class="head"></div>';
-    } else if (cat === 'wrist') {
-      animClass = 'anim-wrist';
-      animHtml = '<div class="arm"></div><div class="hand"></div>';
-    }
-
     return `
   <div class="card">
-    <div class="card-header">
-      <div>
-        <span class="ex-tag">${ex.category}</span>
-        <h3 class="ex-name">${ex.name}</h3>
-      </div>
-    </div>
-    
     <div class="animation-box">
-      <div class="${animClass}">
-        ${animHtml}
-      </div>
+      ${svgContent}
     </div>
-
-    <div class="ex-instructions">
-      <strong>Instructions:</strong><br/>
-      ${ex.instruction}
+    <div class="card-body">
+      <div class="card-header">
+        <div>
+          <span class="ex-tag">${ex.category}</span>
+          <h3 class="ex-name">${ex.name}</h3>
+        </div>
+      </div>
+      
+      <div class="ex-instructions">
+        <strong>How to do it:</strong><br/>
+        ${ex.instruction}
+      </div>
+      
+      ${photoHTML}
     </div>
   </div>`;
   }).join('')}
 
   <div class="footer">
-    Powered by <span>Qalam AI Rehabilitation</span><br/>
-    Consult with your doctor before starting any new routine.
+    Powered by <span>Scribologist AI Rehabilitation</span><br/>
+    <div class="footer-disclaimer">
+      Always consult with your doctor before starting any new exercise routine.<br/>
+      Exercise photos sourced from open-source databases (MIT license).
+    </div>
   </div>
 </div>
 </body>
@@ -413,3 +490,4 @@ export const getSharedExercisesPage = asyncHandler(async (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   return res.status(200).send(htmlContent);
 });
+

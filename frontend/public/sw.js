@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qalam-v2';
+const CACHE_NAME = 'scribologist-v2';
 const ASSETS = [
   '/',
   '/index.html',
