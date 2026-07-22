@@ -3,6 +3,7 @@ import { verifyJwt } from '../middlewares/verifyJwt.js';
 import { User } from '../models/user.model.js';
 import { Patient } from '../models/patient.model.js';
 import { Recording } from '../models/recording.model.js';
+import { DemoLead } from '../models/demoLead.model.js';
 import { ApiResponse } from '../Utils/ApiResponse.js';
 import { ApiError } from '../Utils/ApiError.js';
 import { asyncHandler } from '../Utils/asyncHandler.js';
@@ -26,6 +27,9 @@ router.get(
       const totalDoctors = await User.countDocuments({ role: 'doctor' });
       const totalPatients = await Patient.countDocuments({});
       const totalRecordings = await Recording.countDocuments({});
+      const totalLeads = await DemoLead.countDocuments({});
+
+      const leadsList = await DemoLead.find({}).sort({ createdAt: -1 });
 
       const doctorsList = await User.find({ role: 'doctor' })
         .select('-password')
@@ -86,8 +90,10 @@ router.get(
               doctors: totalDoctors,
               patients: totalPatients,
               recordings: totalRecordings,
+              leads: totalLeads,
             },
             doctors: doctorsWithStats,
+            leads: leadsList,
             recentActivity,
           },
           'Admin dashboard stats fetched successfully'

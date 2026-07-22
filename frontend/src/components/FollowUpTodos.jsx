@@ -62,41 +62,49 @@ export function FollowUpTodos({ recordingId, initialTodos = [], readOnly = false
   const pendingCount = todos.filter((t) => !t.completed).length;
 
   return (
-    <div className="flex flex-col gap-3 p-4 bg-white border border-gray-150 rounded-xl shadow-xs">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-        <span className="text-sm font-bold text-navy">Follow-up Checklist</span>
+    <div className="flex flex-col gap-4 p-5 bg-white border border-slate-200/90 rounded-2xl shadow-xs text-left select-none">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+          Patient Follow-Up Checklist
+        </span>
         {pendingCount > 0 && (
-          <span className="px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-500 rounded-full">{pendingCount} pending</span>
+          <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-amber-50 text-amber-700 rounded-full border border-amber-200/60">
+            {pendingCount} PENDING
+          </span>
         )}
-        {saving && <span className="text-[10px] text-gray-400 font-medium animate-pulse">Saving...</span>}
+        {saving && <span className="text-[10px] text-slate-400 font-mono font-bold animate-pulse">SAVING...</span>}
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         {todos.length === 0 && (
-          <div className="text-xs text-gray-400 font-medium italic py-2 text-left">No follow-up items yet</div>
+          <div className="text-xs text-slate-400 font-medium italic py-2 text-left">
+            No follow-up tasks or rehab exercises assigned yet.
+          </div>
         )}
         {todos.map((todo, idx) => (
-          <div key={idx} className={`flex items-center gap-3 py-2 border-b border-gray-50 last:border-b-0 ${todo.completed ? 'opacity-70' : ''}`}>
-            <label className="relative flex items-center cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => handleToggle(idx)}
-                disabled={readOnly}
-                className="w-4 h-4 accent-teal rounded cursor-pointer disabled:cursor-not-allowed"
-              />
-            </label>
-            <span className={`text-sm text-gray-700 flex-1 text-left ${todo.completed ? 'line-through text-gray-400' : ''}`}>{todo.text}</span>
+          <div key={idx} className={`flex items-center gap-3 py-2 border-b border-slate-100 last:border-b-0 ${todo.completed ? 'opacity-60' : ''}`}>
+            <input
+              type="checkbox"
+              checked={todo.completed}
+              onChange={() => handleToggle(idx)}
+              disabled={readOnly}
+              className="w-4 h-4 accent-[#22252a] rounded cursor-pointer disabled:cursor-not-allowed"
+            />
+            <span className={`text-xs text-slate-800 flex-1 font-medium ${todo.completed ? 'line-through text-slate-400' : ''}`}>
+              {todo.text}
+            </span>
             {todo.completed && todo.completedAt && (
-              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-[9px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-mono font-bold">
                 {new Date(todo.completedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
               </span>
             )}
             {!readOnly && (
-              <button className="p-1 text-gray-300 hover:text-red-brand bg-transparent border-none cursor-pointer flex items-center justify-center rounded hover:bg-red-brand-light/35 transition-colors" onClick={() => handleDelete(idx)} title="Remove">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+              <button
+                className="p-1 text-slate-300 hover:text-rose-600 bg-transparent border-none cursor-pointer flex items-center justify-center rounded transition-colors"
+                onClick={() => handleDelete(idx)}
+                title="Remove task"
+              >
+                ✕
               </button>
             )}
           </div>
@@ -104,19 +112,21 @@ export function FollowUpTodos({ recordingId, initialTodos = [], readOnly = false
       </div>
 
       {!readOnly && (
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 pt-1">
           <input
             type="text"
-            placeholder="Add follow-up item..."
+            placeholder="Add rehab exercise or follow-up note..."
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-teal bg-white"
+            className="flex-1 px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400 bg-slate-50 text-slate-900"
           />
-          <button onClick={handleAdd} disabled={!newTodo.trim()} className="p-2 bg-teal hover:bg-teal-dark text-navy rounded-lg cursor-pointer border-none flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+          <button
+            onClick={handleAdd}
+            disabled={!newTodo.trim()}
+            className="px-4 py-2 bg-[#22252a] hover:bg-[#1a1c20] text-white rounded-xl cursor-pointer border-none font-bold text-xs flex items-center justify-center disabled:opacity-40 transition-all shadow-xs"
+          >
+            Add Task ✦
           </button>
         </div>
       )}

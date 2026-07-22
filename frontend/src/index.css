@@ -78,3 +78,63 @@
   }
 }
 
+@keyframes wind-flow {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.wind-line {
+  stroke-dasharray: 180 320;
+  animation: wind-flow 15s linear infinite;
+}
+
+@keyframes tree-sway {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2.5deg) skewX(1deg);
+  }
+}
+
+.swaying-canopy {
+  animation: tree-sway 4s ease-in-out infinite;
+}
+
+@keyframes bar-bounce {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1.3);
+  }
+}
+
+.voice-bar {
+  animation: bar-bounce 1.2s ease-in-out infinite;
+}
+
+.glow-neon-green {
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.25);
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

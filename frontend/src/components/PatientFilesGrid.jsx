@@ -28,18 +28,26 @@ export function PatientFilesGrid({ patient, onPatientUpdate }) {
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-4">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-wrap gap-4">
+    <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-5 text-left select-none">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-4">
         <div className="text-left">
-          <h3 className="text-base font-bold text-navy">📁 Attached Clinical Files</h3>
-          <p className="text-xs text-gray-500">MRI scans, X-rays, lab results, and diagnostic photos attached to this patient record.</p>
+          <h3
+            className="text-2xl font-normal text-[#22252a] tracking-tight mb-1"
+            style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+          >
+            Clinical Diagnostics & Files
+          </h3>
+          <p className="text-xs text-slate-500 font-sans">MRI scans, X-rays, lab results, and diagnostic images attached to this patient profile.</p>
         </div>
-        <button className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-teal hover:bg-teal-dark text-navy font-semibold text-xs rounded-xl transition-all cursor-pointer border-none shadow-xs" onClick={() => setShowCaptureModal(true)}>
+        <button
+          className="px-4 py-2.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-bold text-xs rounded-xl transition-all cursor-pointer border-none shadow-sm flex items-center gap-1.5"
+          onClick={() => setShowCaptureModal(true)}
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Attach File
+          Attach Clinical File ✦
         </button>
       </div>
 

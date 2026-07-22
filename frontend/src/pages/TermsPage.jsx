@@ -1,85 +1,103 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FileText, ArrowLeft, AlertTriangle, UserCheck, ShieldCheck } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Navbar } from '../components/landing/Navbar';
+import { FooterSection } from '../components/landing/FooterSection';
 
-export function TermsPage() {
-  const navigate = useNavigate();
-
+export function TermsPage({ onNavigate }) {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
-    <div className="min-h-screen bg-warm-white flex flex-col font-sans select-none overflow-x-hidden">
-      {/* Navigation */}
-      <nav className="sticky top-0 bg-warm-white/80 backdrop-blur-md z-50 border-b border-gray-200/40 px-6 py-4 flex justify-between items-center w-full">
-        <div className="font-serif text-[26px] text-navy tracking-[0.5px] font-bold">
-          Qa<span className="text-teal">lam</span>
-        </div>
-        <button 
-          onClick={() => navigate('/')} 
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-navy font-semibold text-xs rounded-xl transition-all cursor-pointer bg-white"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
-        </button>
-      </nav>
+    <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans select-none overflow-x-clip text-slate-800 antialiased">
+      {/* Navbar */}
+      <Navbar onNavigate={onNavigate} />
 
-      {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-6 py-12 flex-1 text-left flex flex-col gap-6">
-        <div className="flex items-center gap-3 border-b border-gray-200 pb-4">
-          <FileText className="w-8 h-8 text-teal" />
-          <div>
-            <h1 className="text-2xl md:text-3xl font-serif text-navy font-bold">Terms of Service</h1>
-            <p className="text-xs text-gray-400 font-medium">Last updated: May 24, 2026</p>
-          </div>
+      {/* Main Content Area (Clean Minimalist Layout matching vsk.design) */}
+      <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-14 md:py-20 text-left">
+        
+        {/* Page Title & Header */}
+        <div className="mb-14 border-b border-slate-200/80 pb-8 text-left">
+          <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400 block mb-3">
+            LEGAL & TERMS
+          </span>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#22252a] font-bold tracking-tight leading-none">
+            Terms of Service
+          </h1>
         </div>
 
-        <p className="text-sm text-gray-600 leading-relaxed">
-          Welcome to Scribologist. By registering for or using our AI-assisted medical scribe platform, web app, or standalone PWA, you agree to comply with and be bound by the following Terms of Service.
-        </p>
+        {/* Introduction */}
+        <div className="text-base sm:text-lg text-slate-700 leading-relaxed mb-12 max-w-3xl">
+          Welcome to Scribologist. By creating an account, accessing, or using our AI-assisted medical documentation platform, you agree to comply with and be bound by the following Terms of Service.
+        </div>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold text-navy flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-brand" /> 1. Important Medical & Liability Disclaimer
-          </h2>
-          <div className="p-4 bg-red-brand-light border border-red-brand/10 rounded-xl">
-            <p className="text-xs text-red-brand leading-relaxed font-semibold uppercase tracking-wider mb-2">Crucial Professional Notice:</p>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              Scribologist is an AI-assisted documentation utility. It does <strong>not</strong> practice medicine, deliver clinical diagnoses, prescribe drug courses, or replace professional medical judgment. 
-              <strong>The clinician holds sole responsibility for reviewing, updating, and verifying all generated transcripts, clinical notes, prescriptions, diagnostics, and vitals before finalizing, printing, or sharing them with patients.</strong> We accept no liability for clinical decisions made based on outputs.
+        {/* Terms Sections Flow (Clean, Borderless, vsk.design style) */}
+        <div className="flex flex-col gap-12 max-w-3xl">
+          
+          {/* Section 01 - Disclaimer */}
+          <section className="flex flex-col gap-3">
+            <span className="text-xs font-mono font-bold text-blue-600 uppercase tracking-widest">01 / MEDICAL DISCLAIMER</span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#22252a]">
+              Clinical Responsibility & Liability Notice
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              Scribologist is an AI-assisted documentation tool designed to streamline clinical note-taking. It does <strong>not</strong> practice medicine, provide clinical diagnoses, prescribe treatment courses, or replace professional medical judgment.
             </p>
-          </div>
-        </section>
+            <div className="border-l-2 border-[#22252a] pl-4 py-1.5 my-1 text-base sm:text-lg text-[#22252a] font-bold leading-relaxed">
+              The registered clinician holds sole responsibility for reviewing, updating, and verifying all generated transcripts, clinical SOAP notes, prescriptions, diagnostics, and vitals before printing, saving, or sharing them with patients.
+            </div>
+          </section>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold text-navy flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-teal" /> 2. Clinician Account & Professional Credentials
-          </h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Scribologist accounts are only available to verified, practicing medical professionals. During onboarding, you must provide your true legal name, medical license number, and qualification. You are responsible for maintaining the confidentiality of your account credentials and represent that all information provided is accurate and current.
-          </p>
-        </section>
+          {/* Section 02 */}
+          <section className="flex flex-col gap-3">
+            <span className="text-xs font-mono font-bold text-blue-600 uppercase tracking-widest">02 / CREDENTIALS</span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#22252a]">
+              Practitioner Verification & Accounts
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              Scribologist services are intended exclusively for verified medical practitioners. During account onboarding, you represent that you hold a valid medical qualification and license to practice. You are responsible for maintaining account credential confidentiality.
+            </p>
+          </section>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold text-navy flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-teal" /> 3. Patient Consent and Legal Compliance
-          </h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            By capturing patient consults, you represent that you have obtained the patient's explicit verbal or written consent to record and process their audio for clinical summarization. You agree to protect patient confidentiality and comply with your regional medical council regulations.
-          </p>
-        </section>
+          {/* Section 03 */}
+          <section className="flex flex-col gap-3">
+            <span className="text-xs font-mono font-bold text-blue-600 uppercase tracking-widest">03 / PATIENT CONSENT</span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#22252a]">
+              Patient Consent & Confidentiality
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              By initiating ambient consultation recording, you affirm that you have obtained appropriate consent from the patient in accordance with National Medical Commission (NMC) guidelines and regional healthcare privacy laws.
+            </p>
+          </section>
 
-        <section className="flex flex-col gap-3 border-t border-gray-100 pt-6">
-          <h2 className="text-lg font-bold text-navy">4. Contact Information</h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            For any queries or legal notices, please write to:
-          </p>
-          <p className="text-sm text-navy font-semibold">
-            Email: legal@scribologist.ai
-          </p>
-        </section>
+          {/* Section 04 */}
+          <section className="flex flex-col gap-3">
+            <span className="text-xs font-mono font-bold text-blue-600 uppercase tracking-widest">04 / INTELLECTUAL PROPERTY</span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#22252a]">
+              Intellectual Property & Service Modifications
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              All platform software, AI transcription models, and branding are the property of Scribologist AI. We reserve the right to update features, improve medical vocabulary dictionaries, or modify service offerings to enhance clinical performance.
+            </p>
+          </section>
+
+          {/* Section 05 */}
+          <section className="flex flex-col gap-3 border-t border-slate-200/80 pt-8">
+            <span className="text-xs font-mono font-bold text-blue-600 uppercase tracking-widest">05 / LEGAL DESK</span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#22252a]">
+              Legal Desk Contact
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              For legal notices, terms inquiries, or compliance correspondence, contact our legal desk:
+            </p>
+            <p className="text-lg sm:text-xl font-bold text-[#22252a]">
+              Email: <a href="mailto:legal@scribologist.ai" className="text-blue-600 underline">legal@scribologist.ai</a>
+            </p>
+          </section>
+
+        </div>
       </main>
 
-      {/* Mini Footer */}
-      <footer className="bg-white border-t border-gray-150 py-6 px-6 text-center text-xs text-gray-400 w-full mt-auto">
-        <p>&copy; {new Date().getFullYear()} Scribologist Medical. All rights reserved.</p>
-      </footer>
+      {/* Footer */}
+      <FooterSection onNavigate={onNavigate} />
     </div>
   );
 }

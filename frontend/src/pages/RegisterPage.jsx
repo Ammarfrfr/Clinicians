@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiClient } from '../config.js';
 
 export function RegisterPage({ onNavigate, onRegisterSuccess }) {
+  const [inviteToken, setInviteToken] = useState('');
+  const [inviteValid, setInviteValid] = useState(false);
+  const [checkingInvite, setCheckingInvite] = useState(true);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -17,6 +21,22 @@ export function RegisterPage({ onNavigate, onRegisterSuccess }) {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check URL query parameters for invite token (e.g. /register?invite=INV-CODE or ?invite=true)
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('invite');
+
+    if (token) {
+      setInviteToken(token);
+      setInviteValid(true);
+      setCheckingInvite(false);
+    } else {
+      // No invite token provided — registration is locked. Redirect to Book Demo page after brief notice.
+      setInviteValid(false);
+      setCheckingInvite(false);
+    }
+  }, []);
 
   const specializations = [
     'General Practice',
@@ -45,7 +65,6 @@ export function RegisterPage({ onNavigate, onRegisterSuccess }) {
     e.preventDefault();
     setError('');
 
-    // Validations
     if (!formData.name || !formData.email || !formData.password) {
       setError('Name, email, and password are required.');
       return;
@@ -74,6 +93,7 @@ export function RegisterPage({ onNavigate, onRegisterSuccess }) {
         licenseNumber: formData.licenseNumber,
         qualification: formData.qualification,
         phone: formData.phone,
+        inviteToken: inviteToken || undefined,
       };
 
       const response = await apiClient.post('/api/auth/register', payload);
@@ -92,18 +112,97 @@ export function RegisterPage({ onNavigate, onRegisterSuccess }) {
     }
   };
 
+  if (checkingInvite) {
+    return (
+      <div className="min-h-screen bg-[#fafafc] flex items-center justify-center p-6">
+        <div className="animate-spin border-2 border-[#22252a] border-t-transparent rounded-full w-6 h-6" />
+      </div>
+    );
+  }
+
+  // Locked View if user accesses /register without a valid ?invite= token
+  if (!inviteValid) {
+    return (
+      <div className="min-h-screen bg-[#fafafc] flex flex-col items-center justify-center p-6 text-center select-none">
+        <div
+          className="flex items-center gap-2 select-none cursor-pointer mb-8"
+          onClick={() => onNavigate('landing')}
+        >
+          <span className="font-sans text-2xl font-black tracking-tighter text-slate-900 uppercase">
+            Scribologist
+          </span>
+        </div>
+
+        <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col gap-6 items-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-700 text-2xl">
+            🔒
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h1
+              className="text-2xl sm:text-3xl font-normal text-[#22252a] tracking-tight"
+              style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+            >
+              Private Invite Required
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 font-sans leading-relaxed">
+              Registration for Scribologist is strictly invite-only for verified clinic networks & doctors. Please book a demo to receive your private activation link.
+            </p>
+          </div>
+
+          <button
+            onClick={() => onNavigate('book-demo')}
+            className="w-full py-3.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer shadow-md border-none"
+          >
+            Book a Demo to Request Access ✦
+          </button>
+
+          <span
+            className="text-xs text-slate-400 font-medium hover:text-slate-600 cursor-pointer"
+            onClick={() => onNavigate('login')}
+          >
+            Already registered? Sign in here
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-warm-white flex flex-col items-center justify-center p-6 text-center">
-      <div className="font-serif text-[32px] text-navy tracking-[0.5px] cursor-pointer mb-6 select-none" onClick={() => onNavigate('landing')}>
-        Qa<span className="text-teal">lam</span>
+    <div className="min-h-screen bg-[#fafafc] flex flex-col items-center justify-center p-6 text-center select-none py-12">
+
+      {/* Brand Header */}
+      <div
+        className="flex items-center gap-2 select-none cursor-pointer mb-8 hover:opacity-80 transition-opacity"
+        onClick={() => onNavigate('landing')}
+      >
+        <span className="font-sans text-2xl font-black tracking-tighter text-slate-900 uppercase">
+          Scribologist
+        </span>
       </div>
 
-      <div className="w-full max-w-2xl bg-white border border-gray-200/60 rounded-2xl p-8 shadow-xs flex flex-col gap-4 text-left">
-        <h2 className="text-xl font-bold text-navy text-left">Create Doctor Account</h2>
-        <p className="text-xs text-gray-500 text-left -mt-2.5 mb-2">Get started with your clinical assistant</p>
+      {/* Main Registration Card */}
+      <div className="w-full max-w-2xl bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col gap-6 text-left">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-mono text-[10px] font-bold uppercase tracking-wider">
+              ✓ Verified Invite Pass ({inviteToken.slice(0, 12)})
+            </span>
+          </div>
+
+          <h1
+            className="text-3xl sm:text-4xl font-normal text-[#22252a] tracking-tight leading-tight mb-2"
+            style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+          >
+            Complete Your Clinic Profile
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-sans">
+            Set up your credentials to activate ambient AI clinical transcription and SOAP note drafting.
+          </p>
+        </div>
 
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-brand-light text-red-brand text-xs flex items-center gap-2 mb-2 border border-red-brand/10 text-left">
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -113,12 +212,18 @@ export function RegisterPage({ onNavigate, onRegisterSuccess }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+
+          {/* Account Details Column */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-sm font-bold text-teal-dark border-b border-gray-100 pb-2 mb-1">Login Credentials</h3>
-            
-            <div className="flex flex-col gap-1.5 text-left">
-              <label htmlFor="name" className="text-xs font-bold text-gray-600">Full Name *</label>
+            <h3 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
+              Account & Security
+            </h3>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="name" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Full Name *
+              </label>
               <input
                 id="name"
                 name="name"
@@ -128,12 +233,14 @@ export function RegisterPage({ onNavigate, onRegisterSuccess }) {
                 onChange={handleChange}
                 disabled={loading}
                 required
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5 text-left">
-              <label htmlFor="email" className="text-xs font-bold text-gray-600">Email Address *</label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Work Email *
+              </label>
               <input
                 id="email"
                 name="email"
@@ -143,155 +250,142 @@ export function RegisterPage({ onNavigate, onRegisterSuccess }) {
                 onChange={handleChange}
                 disabled={loading}
                 required
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5 text-left">
-              <label htmlFor="username" className="text-xs font-bold text-gray-600">Username (Optional)</label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Password *
+              </label>
               <input
-                id="username"
-                name="username"
-                type="text"
-                placeholder="drjohndoe"
-                value={formData.username}
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                required
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5 text-left">
-                <label htmlFor="password" className="text-xs font-bold text-gray-600">Password *</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5 text-left">
-                <label htmlFor="confirmPassword" className="text-xs font-bold text-gray-600">Confirm Password *</label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="confirmPassword" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Confirm Password *
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                disabled={loading}
+                required
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
+              />
             </div>
           </div>
 
+          {/* Clinical Profile Column */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-sm font-bold text-teal-dark border-b border-gray-100 pb-2 mb-1">Professional Profile</h3>
+            <h3 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
+              Clinical Profile
+            </h3>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5 text-left">
-                <label htmlFor="qualification" className="text-xs font-bold text-gray-600">Qualification</label>
-                <input
-                  id="qualification"
-                  name="qualification"
-                  type="text"
-                  placeholder="MBBS, MD"
-                  value={formData.qualification}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5 text-left">
-                <label htmlFor="specialization" className="text-xs font-bold text-gray-600">Specialization</label>
-                <select
-                  id="specialization"
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all h-[42px]"
-                >
-                  <option value="">Select Specialization</option>
-                  {specializations.map((spec) => (
-                    <option key={spec} value={spec}>
-                      {spec}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5 text-left">
-              <label htmlFor="hospital" className="text-xs font-bold text-gray-600">Hospital/Clinic Name</label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="hospital" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Clinic / Hospital Name
+              </label>
               <input
                 id="hospital"
                 name="hospital"
                 type="text"
-                placeholder="City General Hospital"
+                placeholder="Apex Multispecialty Hospital"
                 value={formData.hospital}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5 text-left">
-                <label htmlFor="licenseNumber" className="text-xs font-bold text-gray-600">Medical License #</label>
-                <input
-                  id="licenseNumber"
-                  name="licenseNumber"
-                  type="text"
-                  placeholder="LIC12345"
-                  value={formData.licenseNumber}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="specialization" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Specialization
+              </label>
+              <select
+                id="specialization"
+                name="specialization"
+                value={formData.specialization}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
+              >
+                <option value="">Select Specialization...</option>
+                {specializations.map((spec, i) => (
+                  <option key={i} value={spec}>{spec}</option>
+                ))}
+              </select>
+            </div>
 
-              <div className="flex flex-col gap-1.5 text-left">
-                <label htmlFor="phone" className="text-xs font-bold text-gray-600">Phone Number</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="+91 XXXXX XXXXX"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="licenseNumber" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Medical Registration / License No.
+              </label>
+              <input
+                id="licenseNumber"
+                name="licenseNumber"
+                type="text"
+                placeholder="MCI-2024-84920"
+                value={formData.licenseNumber}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="phone" className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                Contact Phone Number
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="text"
+                placeholder="+91 98765 43210"
+                value={formData.phone}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all text-slate-900"
+              />
             </div>
           </div>
 
-          <div className="md:col-span-2 flex justify-center mt-4">
-            <button type="submit" className="w-full md:w-1/2 inline-flex items-center justify-center px-4 py-3 bg-teal hover:bg-teal-dark text-navy font-semibold text-sm rounded-xl transition-all cursor-pointer border-none shadow-xs disabled:opacity-50 disabled:cursor-not-allowed" disabled={loading}>
+          {/* Submit Button */}
+          <div className="md:col-span-2 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed border-none"
+            >
               {loading ? (
-                <span className="animate-spin border-2 border-navy border-t-transparent rounded-full w-4 h-4"></span>
+                <span className="inline-block animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4" />
               ) : (
-                'Create Account'
+                'Activate Account & Access Workspace ✦'
               )}
             </button>
           </div>
         </form>
 
-        <p className="md:col-span-2 text-xs text-gray-500 text-center mt-2">
-          Already have an account?{' '}
-          <span className="text-teal-dark hover:text-teal font-semibold cursor-pointer underline ml-0.5" onClick={() => onNavigate('login')}>
-            Sign In here
+        <p className="text-xs text-slate-500 mt-1 text-center">
+          Already registered?{' '}
+          <span
+            className="text-slate-900 font-bold hover:underline cursor-pointer ml-0.5"
+            onClick={() => onNavigate('login')}
+          >
+            Sign in here
           </span>
         </p>
       </div>

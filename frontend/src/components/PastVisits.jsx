@@ -28,6 +28,11 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
     setVisibleCount(10);
   }, [patientId, selectedTag]);
 
+  const allTags = ['All', ...new Set(sessions.flatMap(s => s.tags || []))];
+  const filteredSessions = selectedTag === 'All'
+    ? sessions
+    : sessions.filter(s => s.tags?.includes(selectedTag));
+
   useEffect(() => {
     const handleScroll = (e) => {
       const el = e.target;
@@ -186,43 +191,54 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
     }
   };
 
-  const allTags = ['All', ...new Set(sessions.flatMap(s => s.tags || []))];
-  const filteredSessions = selectedTag === 'All'
-    ? sessions
-    : sessions.filter(s => s.tags?.includes(selectedTag));
-
   if (loading) {
     return (
-      <div className="past-visits-container">
-        <div className="loading-spinner">Loading past visits...</div>
+      <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-center py-12 text-slate-500 text-xs font-mono font-bold select-none">
+        <div className="animate-spin border-2 border-[#22252a] border-t-transparent rounded-full w-5 h-5 mr-3" />
+        LOADING PAST ENCOUNTERS...
       </div>
     );
   }
 
   if (!sessions || sessions.length === 0) {
     return (
-      <div className="past-visits-container">
-        <div className="empty-state">
-          <p>No past visits</p>
+      <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-5 text-left select-none">
+        <div className="border-b border-slate-100 pb-3">
+          <h3
+            className="text-2xl font-normal text-[#22252a] tracking-tight"
+            style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+          >
+            Past Encounters & Notes
+          </h3>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-2 text-slate-400 py-10 text-center text-xs font-medium border border-dashed border-slate-200 rounded-2xl">
+          <span>No past consult records found for this patient profile.</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-4">
-      <div className="flex items-center gap-2 mb-2">
-        <h3 className="text-base font-bold text-navy">Past Visits</h3>
-        <span className="px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500 rounded-full">{sessions.length}</span>
+    <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-5 text-left select-none">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3
+          className="text-2xl font-normal text-[#22252a] tracking-tight"
+          style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+        >
+          Past Encounters & Notes
+        </h3>
+        <span className="px-3 py-1 text-xs font-mono font-bold bg-slate-100 text-slate-700 rounded-full border border-slate-200">
+          {sessions.length} Encounters
+        </span>
       </div>
 
       {/* Filter Chips */}
       {allTags.length > 1 && (
-        <div className="flex gap-2 mb-4 flex-wrap">
+        <div className="flex gap-2 mb-2 flex-wrap">
           {allTags.map(tag => (
             <button
               key={tag}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all border ${selectedTag === tag ? 'bg-teal text-navy border-teal' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-mono font-bold cursor-pointer transition-all border ${selectedTag === tag ? 'bg-[#22252a] text-white border-[#22252a]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}
               onClick={() => setSelectedTag(tag)}
             >
               {tag}
@@ -233,21 +249,21 @@ export function PastVisits({ patientId, currentSessionId, noteSavedTrigger }) {
 
       <div className="flex flex-col gap-3">
         {filteredSessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 text-gray-500 py-8 text-center text-sm font-medium border border-dashed border-gray-200 rounded-xl">
-            <p>No past visits match the "{selectedTag}" filter.</p>
+          <div className="flex flex-col items-center justify-center gap-3 text-slate-500 py-10 text-center text-xs font-medium border border-dashed border-slate-200 rounded-2xl">
+            <p>No past encounters match the "{selectedTag}" filter.</p>
           </div>
         ) : (
           filteredSessions.slice(0, visibleCount).map((session) => (
-            <div key={session._id} className="border border-gray-150 rounded-xl bg-white overflow-hidden shadow-xs hover:border-teal/30 transition-all">
+            <div key={session._id} className="border border-slate-200/90 rounded-2xl bg-white overflow-hidden shadow-xs hover:border-slate-300 transition-all">
               {/* Session Card Header */}
               <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                className="flex items-center justify-between p-4 px-5 cursor-pointer hover:bg-slate-50 transition-colors"
                 onClick={() => toggleExpand(session._id)}
               >
                 <div className="flex items-center gap-4 flex-1 text-left">
                   <div className="flex flex-col text-left shrink-0">
-                    <div className="text-sm font-semibold text-navy">{formatDate(session.createdAt)}</div>
-                    <div className="text-xs text-gray-400 font-medium">{formatTime(session.createdAt)}</div>
+                    <div className="text-sm font-bold text-slate-900">{formatDate(session.createdAt)}</div>
+                    <div className="text-xs text-slate-400 font-mono font-medium">{formatTime(session.createdAt)}</div>
                   </div>
                   <div className="flex flex-col text-left gap-1 flex-1">
                     <div className="text-sm font-medium text-gray-700 flex items-center gap-2 flex-wrap">

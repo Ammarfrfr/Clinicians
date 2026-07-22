@@ -29,31 +29,37 @@ export function Transcript({ transcript, recording }) {
   const lines = parseTranscript(transcript);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex-1 flex flex-col overflow-hidden">
-      <div className="flex justify-between items-center mb-4 shrink-0">
-        <span className="text-[13.5px] font-semibold text-navy">Transcript</span>
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex-1 flex flex-col overflow-hidden text-left select-none shadow-xs">
+      <div className="flex justify-between items-center mb-4 shrink-0 border-b border-slate-100 pb-3">
+        <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
+          Live Audio Transcript
+        </span>
         {recording && (
-          <div className="flex items-center gap-1.5 text-[10px] font-mono font-semibold text-teal-dark tracking-wider">
-            <div className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-            LIVE
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 font-mono text-[10px] font-bold">
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+            LIVE TRANSCRIPTION
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto text-[13.5px] leading-relaxed text-gray-700">
+
+      <div className="flex-1 overflow-y-auto text-xs leading-relaxed text-slate-700 flex flex-col gap-3 font-sans">
         {!transcript && recording && (
-          <div className="text-gray-400 italic">Listening... speak to begin transcription</div>
+          <div className="text-slate-400 italic text-xs py-4">
+            Listening to doctor-patient conversation... speak ambiently to begin.
+          </div>
         )}
+
         {lines.map((line) => (
-          <div key={line.id} style={{ marginBottom: '8px' }}>
+          <div key={line.id} className="flex flex-col gap-0.5">
             {line.speaker ? (
               <div>
-                <span className={`${line.speaker === 'Doctor' ? 'text-teal-dark' : 'text-navy-light'} font-semibold text-[12px]`}>
-                  {line.speaker}:
-                </span>{' '}
-                <span className="text-gray-700">{line.text}</span>
+                <span className={`font-bold text-xs uppercase tracking-wider block mb-0.5 ${line.speaker === 'Doctor' ? 'text-[#22252a]' : 'text-slate-500'}`}>
+                  {line.speaker}
+                </span>
+                <span className="text-slate-800 text-xs leading-relaxed">{line.text}</span>
               </div>
             ) : (
-              <span className="text-gray-700">{line.text}</span>
+              <span className="text-slate-800 text-xs leading-relaxed">{line.text}</span>
             )}
           </div>
         ))}

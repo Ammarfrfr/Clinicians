@@ -3,14 +3,14 @@ import { Printer } from 'lucide-react';
 import { generateClinicalNotePDF, downloadPDFFromHTML } from '../utils/generatePDFHTML.js';
 
 const SECTION_OPTIONS = [
-  { key: 'notes', label: 'Clinical Note / Summary' },
+  { key: 'notes', label: 'Clinical Summary' },
   { key: 'chief_complaint', label: 'Chief Complaint' },
-  { key: 'history', label: 'History' },
-  { key: 'examination', label: 'Examination' },
+  { key: 'history', label: 'Clinical History' },
+  { key: 'examination', label: 'Physical Examination' },
   { key: 'diagnosis', label: 'Diagnosis' },
-  { key: 'prescription', label: 'Prescription' },
-  { key: 'followup', label: 'Follow-up' },
-  { key: 'vitals', label: 'Vitals' },
+  { key: 'prescription', label: 'Rx Medications' },
+  { key: 'followup', label: 'Follow-up & Advice' },
+  { key: 'vitals', label: 'Patient Vitals' },
   { key: 'exercises', label: 'Rehabilitation' },
 ];
 
@@ -44,7 +44,6 @@ export function ExportModal({ isOpen, onClose, note, patient, doctor }) {
     const isChecked = e.target.checked;
     setPhysicalLetterhead(isChecked);
     if (isChecked) {
-      // Force uncheck clinical fields, check only Rx and follow-up/notes
       setSections({
         notes: true,
         chief_complaint: false,
@@ -57,7 +56,6 @@ export function ExportModal({ isOpen, onClose, note, patient, doctor }) {
         exercises: true,
       });
     } else {
-      // Reset back to checking all that have data
       setSections(Object.fromEntries(SECTION_OPTIONS.map((s) => [s.key, hasData(s.key)])));
     }
   };
@@ -72,64 +70,87 @@ export function ExportModal({ isOpen, onClose, note, patient, doctor }) {
       sections,
       { physicalLetterhead }
     );
-    downloadPDFFromHTML(html, `${physicalLetterhead ? 'Prescription' : 'Clinical_Note'}_${patient?.firstName || 'Patient'}.pdf`);
+    downloadPDFFromHTML(html, `Scribologist_Handout_${patient?.firstName || 'Patient'}.pdf`);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-navy/40 flex items-center justify-center z-[9999] p-4 backdrop-blur-xs" onClick={onClose}>
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-gray-100 flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-navy mb-1 text-left">Export PDF</h2>
-        <p className="text-xs text-gray-500 mb-4 text-left">
-          Select which sections to include in the report
-        </p>
+    <div className="fixed inset-0 bg-slate-950/60 flex items-center justify-center z-[9999] p-4 backdrop-blur-xs select-none" onClick={onClose}>
+      <div
+        className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-200/90 flex flex-col p-7 text-left animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="border-b border-slate-100 pb-4 mb-4">
+          <h2
+            className="text-2xl font-normal text-[#22252a] tracking-tight mb-1"
+            style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+          >
+            Export Clinical Handout
+          </h2>
+          <p className="text-xs text-slate-500 font-sans">
+            Configure section inclusion for the patient PDF document.
+          </p>
+        </div>
 
         {/* Physical Letterhead Toggle */}
-        <div className="mb-5 p-3.5 bg-teal-light/50 rounded-xl border border-teal/20 text-left">
-          <label className="flex items-center gap-2.5 cursor-pointer font-semibold text-sm text-teal-dark">
+        <div className="mb-5 p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-left">
+          <label className="flex items-center gap-3 cursor-pointer font-bold text-xs text-slate-900 uppercase tracking-wider font-mono">
             <input
               type="checkbox"
               checked={physicalLetterhead}
               onChange={handleLetterheadToggle}
-              className="cursor-pointer w-4 h-4 accent-teal"
+              className="cursor-pointer w-4 h-4 accent-slate-900"
             />
-            <Printer className="w-4 h-4" /> Print on Physical Letterhead
+            <Printer className="w-4 h-4 text-slate-700" /> Print on Physical Clinic Letterhead
           </label>
-          <div className="text-[11px] text-gray-500 mt-1 ml-6.5">
-            Leaves 180px top clearance for physical letterhead. Hides internal assessment.
+          <div className="text-[11px] text-slate-500 mt-1.5 ml-7 font-sans">
+            Leaves 180px top margin for pre-printed letterheads. Hides internal assessment sections.
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6 text-left">
           {SECTION_OPTIONS.map(({ key, label }) => (
             <label 
               key={key} 
-              className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all select-none ${sections[key] ? 'border-teal/35 bg-teal-light/10' : 'border-gray-150 bg-white hover:bg-gray-50'} ${physicalLetterhead ? 'opacity-55 cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`flex items-center gap-3 p-3 px-3.5 rounded-xl border transition-all select-none ${
+                sections[key]
+                  ? 'border-slate-800 bg-slate-900/5'
+                  : 'border-slate-200/80 bg-white hover:bg-slate-50'
+              } ${physicalLetterhead ? 'opacity-55 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <input
                 type="checkbox"
                 checked={sections[key]}
                 onChange={() => toggleSection(key)}
                 disabled={physicalLetterhead}
-                className="w-4 h-4 accent-teal cursor-pointer disabled:cursor-not-allowed"
+                className="w-4 h-4 accent-slate-900 cursor-pointer disabled:cursor-not-allowed"
               />
-              <span className="text-sm font-semibold text-navy">{label}</span>
+              <span className="text-xs font-bold text-slate-900">{label}</span>
               {!hasData(key) && (
-                <span className="ml-auto text-[9.5px] font-bold text-red-brand bg-red-brand-light px-1.5 py-0.5 rounded uppercase">No data</span>
+                <span className="ml-auto text-[9px] font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase">Empty</span>
               )}
             </label>
           ))}
         </div>
 
-        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100">
-          <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-teal hover:bg-teal-dark text-navy font-semibold text-sm rounded-xl transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleExport} disabled={enabledCount === 0}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button
+            className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-xs"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-5 py-2.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-md border-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleExport}
+            disabled={enabledCount === 0}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            Export {enabledCount} Section{enabledCount !== 1 ? 's' : ''}
+            Generate PDF ({enabledCount} Sections)
           </button>
-          <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-navy font-semibold text-sm rounded-xl transition-all cursor-pointer" onClick={onClose}>Cancel</button>
         </div>
       </div>
     </div>

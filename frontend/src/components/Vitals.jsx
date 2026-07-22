@@ -49,39 +49,72 @@ export function Vitals({ sessionId, onVitalsSaved }) {
     }
   };
 
-  const getStatusColor = (field, value) => {
+  const getStatusColor = (param, value) => {
     if (!value) return null;
-    switch (field) {
-      case 'systolic': return value > 130 ? '#E05555' : '#22C55E';
-      case 'diastolic': return value > 80 ? '#F59E0B' : '#22C55E';
-      case 'hr': return value > 100 || value < 60 ? '#F59E0B' : '#22C55E';
-      case 'spo2': return value < 95 ? '#E05555' : '#22C55E';
-      case 'temp': return value > 99 ? '#E05555' : '#22C55E';
-      default: return '#22C55E';
+    const v = parseFloat(value);
+    switch (param) {
+      case 'systolic':
+        if (v < 90) return '#3b82f6';
+        if (v <= 120) return '#10b981';
+        if (v <= 139) return '#f59e0b';
+        return '#ef4444';
+      case 'hr':
+        if (v < 60) return '#3b82f6';
+        if (v <= 100) return '#10b981';
+        return '#ef4444';
+      case 'spo2':
+        if (v >= 95) return '#10b981';
+        if (v >= 90) return '#f59e0b';
+        return '#ef4444';
+      case 'temp':
+        if (v < 97) return '#3b82f6';
+        if (v <= 99) return '#10b981';
+        return '#ef4444';
+      default:
+        return null;
     }
   };
 
-  const getStatusLabel = (field, value) => {
+  const getStatusLabel = (param, value) => {
     if (!value) return null;
-    switch (field) {
-      case 'systolic': return value > 130 ? 'High' : 'Normal';
-      case 'diastolic': return value > 80 ? 'Elevated' : 'Normal';
-      case 'hr': return value > 100 ? 'Elevated' : value < 60 ? 'Low' : 'Normal';
-      case 'spo2': return value < 95 ? 'Low' : 'Normal';
-      case 'temp': return value > 99 ? 'Elevated' : 'Normal';
-      default: return 'Recorded';
+    const v = parseFloat(value);
+    switch (param) {
+      case 'systolic':
+        if (v < 90) return 'Low';
+        if (v <= 120) return 'Normal';
+        if (v <= 139) return 'Prehypertension';
+        return 'High';
+      case 'hr':
+        if (v < 60) return 'Bradycardia';
+        if (v <= 100) return 'Normal';
+        return 'Tachycardia';
+      case 'spo2':
+        if (v >= 95) return 'Normal';
+        if (v >= 90) return 'Mild Hypoxia';
+        return 'Hypoxia';
+      case 'temp':
+        if (v < 97) return 'Low';
+        if (v <= 99) return 'Normal';
+        return 'Fever';
+      default:
+        return null;
     }
   };
 
   if (!sessionId) {
     return (
-      <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-4">
-        <h3 className="text-base font-bold text-navy">Vitals</h3>
-        <div className="flex flex-col items-center justify-center gap-3 text-gray-400 py-8 text-center text-sm font-medium border border-dashed border-gray-200 rounded-xl">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300">
+      <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-4 text-left select-none">
+        <h3
+          className="text-2xl font-normal text-[#22252a] tracking-tight border-b border-slate-100 pb-3"
+          style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+        >
+          Patient Vitals
+        </h3>
+        <div className="flex flex-col items-center justify-center gap-3 text-slate-400 py-10 text-center text-xs font-medium border border-dashed border-slate-200 rounded-2xl">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-300">
             <polyline strokeLinecap="round" points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
-          <span>Record a consultation to log vitals</span>
+          <span>Record an encounter to log patient vital signs</span>
         </div>
       </div>
     );
@@ -89,28 +122,34 @@ export function Vitals({ sessionId, onVitalsSaved }) {
 
   if (mode === 'display' && savedVitals) {
     return (
-      <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-4">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-          <h3 className="text-base font-bold text-navy">Vitals</h3>
-          <button className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-navy font-semibold text-xs rounded-xl transition-all cursor-pointer" onClick={() => setMode('form')} style={{ fontSize: '12px' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            Edit
+      <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-5 text-left select-none">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3
+            className="text-2xl font-normal text-[#22252a] tracking-tight"
+            style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+          >
+            Patient Vitals
+          </h3>
+          <button
+            className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 font-mono font-bold text-xs rounded-xl transition-all cursor-pointer shadow-xs"
+            onClick={() => setMode('form')}
+          >
+            Edit Vitals
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
-          {/* BP card - full width */}
-          <div className="col-span-2 sm:col-span-3 p-4 bg-gray-50/50 border border-gray-100 rounded-xl flex flex-col relative gap-1">
-            <div className="text-xs font-bold text-gray-500">Blood Pressure</div>
-            <div className="text-2xl font-bold text-navy flex items-baseline gap-1 mt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="col-span-2 sm:col-span-3 p-5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col relative gap-1">
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Blood Pressure</div>
+            <div className="text-3xl font-black text-slate-900 flex items-baseline gap-1 mt-1 tracking-tight">
               {savedVitals.systolic}/{savedVitals.diastolic}
-              <span className="text-xs font-medium text-gray-400">mmHg</span>
+              <span className="text-xs font-mono text-slate-400">mmHg</span>
             </div>
             {getStatusColor('systolic', savedVitals.systolic) && (
-              <span className="absolute top-3 right-3 text-[10px] font-bold text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider" style={{ backgroundColor: getStatusColor('systolic', savedVitals.systolic) }}>
+              <span
+                className="absolute top-4 right-4 text-[10px] font-mono font-bold text-white px-3 py-1 rounded-full uppercase tracking-wider shadow-xs"
+                style={{ backgroundColor: getStatusColor('systolic', savedVitals.systolic) }}
+              >
                 {getStatusLabel('systolic', savedVitals.systolic)}
               </span>
             )}
@@ -123,14 +162,17 @@ export function Vitals({ sessionId, onVitalsSaved }) {
             { key: 'weight', label: 'Weight', unit: 'kg' },
           ].map(({ key, label, unit }) => (
             savedVitals[key] ? (
-              <div key={key} className="p-4 bg-gray-50/50 border border-gray-100 rounded-xl flex flex-col relative gap-1">
-                <div className="text-xs font-bold text-gray-500">{label}</div>
-                <div className="text-2xl font-bold text-navy flex items-baseline gap-1 mt-1">
+              <div key={key} className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col relative gap-1">
+                <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">{label}</div>
+                <div className="text-2xl font-black text-slate-900 flex items-baseline gap-1 mt-1 tracking-tight">
                   {savedVitals[key]}
-                  <span className="text-xs font-medium text-gray-400">{unit}</span>
+                  <span className="text-xs font-mono text-slate-400">{unit}</span>
                 </div>
                 {getStatusColor(key, savedVitals[key]) && (
-                  <span className="absolute top-3 right-3 text-[10px] font-bold text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider" style={{ backgroundColor: getStatusColor(key, savedVitals[key]) }}>
+                  <span
+                    className="absolute top-3 right-3 text-[9px] font-mono font-bold text-white px-2 py-0.5 rounded-full uppercase tracking-wider"
+                    style={{ backgroundColor: getStatusColor(key, savedVitals[key]) }}
+                  >
                     {getStatusLabel(key, savedVitals[key])}
                   </span>
                 )}
@@ -143,41 +185,105 @@ export function Vitals({ sessionId, onVitalsSaved }) {
   }
 
   return (
-    <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-4">
-      <h3 className="text-base font-bold text-navy">Record Vitals</h3>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-5 text-left select-none">
+      <div className="border-b border-slate-100 pb-3">
+        <h3
+          className="text-2xl font-normal text-[#22252a] tracking-tight mb-1"
+          style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+        >
+          Log Vital Signs
+        </h3>
+        <p className="text-xs text-slate-500 font-sans">
+          Record current patient vitals for clinical note attachment.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-gray-600">Systolic (mmHg) *</label>
-            <input type="number" name="systolic" value={vitals.systolic} onChange={handleInputChange} placeholder="120" min="0" max="300" required className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all" />
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-600">Systolic BP (mmHg) *</label>
+            <input
+              type="number"
+              name="systolic"
+              placeholder="120"
+              value={vitals.systolic}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-gray-600">Diastolic (mmHg) *</label>
-            <input type="number" name="diastolic" value={vitals.diastolic} onChange={handleInputChange} placeholder="80" min="0" max="200" required className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all" />
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-600">Diastolic BP (mmHg) *</label>
+            <input
+              type="number"
+              name="diastolic"
+              placeholder="80"
+              value={vitals.diastolic}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-gray-600">Heart Rate (bpm) *</label>
-            <input type="number" name="hr" value={vitals.hr} onChange={handleInputChange} placeholder="72" min="0" max="250" required className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all" />
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-600">Heart Rate (bpm) *</label>
+            <input
+              type="number"
+              name="hr"
+              placeholder="72"
+              value={vitals.hr}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-gray-600">SpO2 (%) *</label>
-            <input type="number" name="spo2" value={vitals.spo2} onChange={handleInputChange} placeholder="98" min="0" max="100" required className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all" />
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-600">SpO2 (%) *</label>
+            <input
+              type="number"
+              name="spo2"
+              placeholder="98"
+              value={vitals.spo2}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-600">Temp (°F) *</label>
+            <input
+              type="number"
+              step="0.1"
+              name="temp"
+              placeholder="98.6"
+              value={vitals.temp}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-600">Weight (kg)</label>
+            <input
+              type="number"
+              step="0.1"
+              name="weight"
+              placeholder="70"
+              value={vitals.weight}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-gray-600">Temperature (°F) *</label>
-            <input type="number" name="temp" value={vitals.temp} onChange={handleInputChange} placeholder="98.6" min="0" max="120" step="0.1" required className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-gray-600">Weight (kg)</label>
-            <input type="number" name="weight" value={vitals.weight} onChange={handleInputChange} placeholder="70" min="0" max="500" step="0.1" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all" />
-          </div>
-        </div>
-        <button type="submit" className="mt-2 w-full inline-flex items-center justify-center px-4 py-2.5 bg-teal hover:bg-teal-dark text-navy font-semibold text-sm rounded-xl transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Vitals'}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer shadow-md border-none"
+        >
+          {loading ? 'Saving Vitals...' : 'Save & Attach Vitals ✦'}
         </button>
       </form>
     </div>

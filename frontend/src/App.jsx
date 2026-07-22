@@ -23,7 +23,11 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then(m => ({ default: m.TermsPage })));
+const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const BookDemoPage = lazy(() => import('./pages/BookDemoPage').then(m => ({ default: m.BookDemoPage })));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const PressPage = lazy(() => import('./pages/PressPage').then(m => ({ default: m.PressPage })));
+
 
 function App() {
   return (
@@ -36,6 +40,11 @@ function App() {
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Auto scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Parse path manually because useParams() returns empty values when called outside of <Routes>
   const pathParts = location.pathname.split('/');
@@ -400,7 +409,7 @@ function AppContent() {
 
   if (authChecking) {
     return (
-      <div className="flex h-screen w-full bg-warm-white justify-center items-center">
+      <div className="flex h-screen w-full bg-[#fafafc] justify-center items-center">
         <div className="flex flex-col gap-4 items-center">
           <span className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-teal"></span>
           <p className="text-sm text-gray-600 font-medium">Verifying credentials...</p>
@@ -412,7 +421,7 @@ function AppContent() {
   const renderDashboard = () => {
     if (loading) {
       return (
-        <div className="flex flex-col h-screen w-full bg-warm-white justify-center items-center">
+        <div className="flex flex-col h-screen w-full bg-[#fafafc] justify-center items-center">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
@@ -424,9 +433,9 @@ function AppContent() {
     }
 
     return (
-      <div className="flex flex-col h-screen w-full bg-warm-white font-sans">
-        {/* Topbar */}
-        <header className="flex items-center justify-between px-5 h-14 bg-navy shrink-0 z-50">
+      <div className="flex flex-col h-screen w-full bg-[#fafafc] font-sans">
+        {/* Sleek Transcribe Navbar */}
+        <header className="flex items-center justify-between px-6 h-15 bg-[#1e2126] border-b border-slate-800/80 shrink-0 z-50 select-none">
           <div className="flex items-center gap-3">
             <button
               className="md:hidden block bg-transparent border-none text-white p-1.5 cursor-pointer"
@@ -438,43 +447,49 @@ function AppContent() {
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <span className="font-serif text-[22px] text-white tracking-[0.5px] cursor-default select-none">
-              Qa<span className="text-teal">lam</span>
-            </span>
+            <div className="flex items-center gap-2 select-none cursor-pointer" onClick={() => navigate('/')}>
+              <span className="font-sans text-xl font-black text-white uppercase tracking-tighter">
+                Scribologist
+              </span>
+            </div>
           </div>
+
           <div className="flex-1 flex justify-center items-center hidden md:flex">
             {currentUser && currentUser.profile && (
-              <div className="text-white text-[13.5px] font-medium flex items-center gap-2">
-                Dr. {currentUser.profile.name} <span className="font-mono text-[10.5px] bg-teal text-navy px-1.5 py-0.5 rounded font-bold">ID: {currentUser._id ? currentUser._id.slice(-6).toUpperCase() : 'N/A'}</span>
+              <div className="text-slate-300 text-xs font-medium flex items-center gap-2">
+                <span className="font-bold text-white">Dr. {currentUser.profile.name}</span>
+                <span className="font-mono text-[10px] bg-slate-800/90 text-slate-300 border border-slate-700/80 px-2.5 py-0.5 rounded-md font-bold">
+                  ID: {currentUser._id ? currentUser._id.slice(-6).toUpperCase() : 'N/A'}
+                </span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="hidden md:flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-xl px-2.5 py-1 text-[11.5px] text-white">
-              <span className="text-white/60">Notes</span>
-              <span className="font-semibold">{notesToday}</span>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-1.5 bg-slate-800/70 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-300 font-mono">
+              <span className="text-slate-400 uppercase font-bold text-[10px]">Notes</span>
+              <span className="font-bold text-white">{notesToday}</span>
             </div>
-            <div className="hidden md:flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-xl px-2.5 py-1 text-[11.5px] text-white">
-              <span className="text-white/60">Saved</span>
-              <span className="font-semibold">{hoursSaved.toFixed(1)}h</span>
+            <div className="hidden md:flex items-center gap-1.5 bg-slate-800/70 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-300 font-mono">
+              <span className="text-slate-400 uppercase font-bold text-[10px]">Saved</span>
+              <span className="font-bold text-white">{hoursSaved.toFixed(1)}h</span>
             </div>
             <div className="avatar-container relative">
-              <div className="w-8 h-8 rounded-full bg-teal text-navy flex items-center justify-center text-[13.5px] font-semibold select-none cursor-pointer" onClick={() => setShowProfileMenu(!showProfileMenu)}>
+              <div className="w-8 h-8 rounded-xl bg-[#22252a] border border-slate-700/80 text-white flex items-center justify-center text-xs font-bold select-none cursor-pointer shadow-xs" onClick={() => setShowProfileMenu(!showProfileMenu)}>
                 {(currentUser?.profile?.name?.[0] || 'D').toUpperCase()}
               </div>
               {showProfileMenu && (
-                <div className="absolute top-10 right-0 bg-white border border-gray-200 rounded-xl w-60 shadow-lg z-[1000] transition-all duration-200">
-                  <div className="p-4">
-                    <div className="text-sm font-semibold text-navy">{currentUser?.profile?.name}</div>
-                    <div className="text-[11.5px] text-gray-500 mt-0.5">{currentUser?.profile?.qualification || 'Clinician'} · {currentUser?.profile?.specialization || 'General'}</div>
-                    {currentUser?.profile?.hospital && <div className="text-[11.5px] text-gray-600 mt-1 italic">{currentUser?.profile?.hospital}</div>}
-                    {currentUser?.profile?.licenseNumber && <div className="text-[10.5px] font-mono text-gray-500 mt-1">Lic: {currentUser?.profile?.licenseNumber}</div>}
-                    <div className="inline-block mt-2.5 text-[9.5px] font-mono px-2 py-0.5 rounded bg-teal-light text-teal-dark uppercase font-semibold">{currentUser?.subscriptionPlan || 'free'} plan</div>
+                <div className="absolute top-10 right-0 bg-white border border-slate-200 rounded-2xl w-64 shadow-2xl z-[1000] text-left p-4 flex flex-col gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-900">{currentUser?.profile?.name}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{currentUser?.profile?.qualification || 'Clinician'} · {currentUser?.profile?.specialization || 'General'}</div>
+                    {currentUser?.profile?.hospital && <div className="text-xs text-slate-600 mt-1 italic">{currentUser?.profile?.hospital}</div>}
+                    {currentUser?.profile?.licenseNumber && <div className="text-[10px] font-mono text-slate-400 mt-1">Lic: {currentUser?.profile?.licenseNumber}</div>}
                   </div>
-                  <div className="h-px bg-gray-100"></div>
-                  <button className="w-full px-4 py-3 border-none bg-transparent text-[13.5px] font-medium text-left cursor-pointer flex items-center gap-2.5 text-red-brand rounded-b-xl hover:bg-red-brand-light transition-colors duration-150" onClick={handleLogout}>
+                  <div className="h-px bg-slate-100" />
+                  <button className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl transition-all cursor-pointer border border-rose-200 flex items-center justify-center gap-2" onClick={handleLogout}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
                     </svg>
                     Sign Out
                   </button>
@@ -490,14 +505,14 @@ function AppContent() {
             <div className="flex items-center gap-2 text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
               <span>
-                {isOffline 
-                  ? `You are currently offline. Any recordings will be saved locally.` 
+                {isOffline
+                  ? `You are currently offline. Any recordings will be saved locally.`
                   : `${pendingOfflineCount} recording(s) waiting to sync.`
                 }
               </span>
             </div>
             {!isOffline && pendingOfflineCount > 0 && (
-              <button 
+              <button
                 onClick={handleSync}
                 className="bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-lg border-none text-[10px] uppercase font-bold cursor-pointer transition-colors"
               >
@@ -519,7 +534,7 @@ function AppContent() {
           />
 
           {/* Center Content */}
-          <main className="flex-1 flex flex-col bg-warm-white p-5 overflow-y-auto min-h-0 min-w-0">
+          <main className="flex-1 flex flex-col bg-[#fafafc] p-6 overflow-y-auto min-h-0 min-w-0">
             {activePatient ? (
               <>
                 <PatientBar
@@ -528,36 +543,51 @@ function AppContent() {
                   onDeletePatient={handleDeletePatient}
                 />
 
-                <div className="flex gap-2 mb-5 border-b border-gray-200 pb-2 shrink-0 overflow-x-auto no-scrollbar whitespace-nowrap">
+                <div className="flex gap-2 mb-6 border-b border-slate-200/80 pb-3 shrink-0 overflow-x-auto no-scrollbar whitespace-nowrap">
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'record' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`px-4 py-2 text-xs font-mono font-bold rounded-full transition-all cursor-pointer border ${activeTab === 'record'
+                        ? 'bg-[#22252a] text-white border-[#22252a] shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                      }`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/record`)}
                   >
-                    Record
+                    RECORD & AMBIENT
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'visits' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`px-4 py-2 text-xs font-mono font-bold rounded-full transition-all cursor-pointer border ${activeTab === 'visits'
+                        ? 'bg-[#22252a] text-white border-[#22252a] shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                      }`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/visits`)}
                   >
-                    Past Visits
+                    PAST ENCOUNTERS
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'vitals' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`px-4 py-2 text-xs font-mono font-bold rounded-full transition-all cursor-pointer border ${activeTab === 'vitals'
+                        ? 'bg-[#22252a] text-white border-[#22252a] shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                      }`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/vitals`)}
                   >
-                    Vitals
+                    VITALS
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'reminders' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`px-4 py-2 text-xs font-mono font-bold rounded-full transition-all cursor-pointer border ${activeTab === 'reminders'
+                        ? 'bg-[#22252a] text-white border-[#22252a] shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                      }`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/reminders`)}
                   >
-                    Reminders
+                    REMINDERS & REHAB
                   </button>
                   <button
-                    className={`bg-transparent border-none px-4 py-1.5 text-[13.5px] font-semibold rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${activeTab === 'files' ? 'text-teal-dark bg-teal-light' : 'text-gray-500 hover:text-navy hover:bg-gray-50'}`}
+                    className={`px-4 py-2 text-xs font-mono font-bold rounded-full transition-all cursor-pointer border ${activeTab === 'files'
+                        ? 'bg-[#22252a] text-white border-[#22252a] shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                      }`}
                     onClick={() => navigate(`/transcribe/${activePatientId}/files`)}
                   >
-                    Files
+                    CLINICAL FILES
                   </button>
                 </div>
 
@@ -735,38 +765,41 @@ function AppContent() {
         <Route path="/register" element={
           currentUser ? (currentUser.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/transcribe" replace />) : <RegisterPage onNavigate={(p) => navigate('/' + p)} onRegisterSuccess={handleLoginSuccess} />
         } />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage onNavigate={(p) => navigate('/' + p)} />} />
+        <Route path="/terms" element={<TermsPage onNavigate={(p) => navigate('/' + p)} />} />
+        <Route path="/about" element={<AboutPage onNavigate={(p) => navigate('/' + p)} />} />
+        <Route path="/press" element={<PressPage onNavigate={(p) => navigate('/' + p)} />} />
+        <Route path="/book-demo" element={<BookDemoPage onNavigate={(p) => navigate('/' + p)} />} />
         <Route path="/admin" element={
           !currentUser ? <Navigate to="/login" replace /> :
-          currentUser.role === 'admin' ? <AdminDashboard onLogout={handleLogout} /> :
-          <Navigate to="/transcribe" replace />
+            currentUser.role === 'admin' ? <AdminDashboard onLogout={handleLogout} /> :
+              <Navigate to="/transcribe" replace />
         } />
         <Route path="/onboarding" element={
           !currentUser ? <Navigate to="/login" replace /> :
-          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-          currentUser.onboardingComplete ? <Navigate to="/transcribe" replace /> :
-          <div className="min-h-screen bg-warm-white flex items-center justify-center p-6">
-            <OnboardingModal isOpen={true} user={currentUser} onOnboardingSuccess={handleOnboardingSuccess} isInline={true} />
-          </div>
+            currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+              currentUser.onboardingComplete ? <Navigate to="/transcribe" replace /> :
+                <div className="min-h-screen bg-[#fafafc] flex items-center justify-center p-6">
+                  <OnboardingModal isOpen={true} user={currentUser} onOnboardingSuccess={handleOnboardingSuccess} isInline={true} />
+                </div>
         } />
         <Route path="/transcribe" element={
           !currentUser ? <Navigate to="/login" replace /> :
-          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-          !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
-          renderDashboard()
+            currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+              !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
+                renderDashboard()
         } />
         <Route path="/transcribe/:patientId" element={
           !currentUser ? <Navigate to="/login" replace /> :
-          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-          !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
-          renderDashboard()
+            currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+              !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
+                renderDashboard()
         } />
         <Route path="/transcribe/:patientId/:tab" element={
           !currentUser ? <Navigate to="/login" replace /> :
-          currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
-          !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
-          renderDashboard()
+            currentUser.role === 'admin' ? <Navigate to="/admin" replace /> :
+              !currentUser.onboardingComplete ? <Navigate to="/onboarding" replace /> :
+                renderDashboard()
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

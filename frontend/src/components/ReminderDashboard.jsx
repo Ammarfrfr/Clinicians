@@ -79,13 +79,15 @@ export function ReminderDashboard({ patients, doctor }) {
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-4">
-      <div className="border-b border-gray-100 pb-3 flex flex-col gap-1">
-        <h3 className="text-base font-bold text-navy flex items-center gap-1.5">
-          <Calendar className="w-5 h-5 text-teal" />
-          Upcoming Follow-up Reminders
+    <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-5 text-left select-none">
+      <div className="border-b border-slate-100 pb-3 flex flex-col gap-1">
+        <h3
+          className="text-2xl font-normal text-[#22252a] tracking-tight mb-1"
+          style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+        >
+          Follow-Up & Rehab Dispatch
         </h3>
-        <p className="text-xs text-gray-500">Send quick WhatsApp appointment reminders to patients scheduled in the next 7 days.</p>
+        <p className="text-xs text-slate-500 font-sans">Dispatch WhatsApp reminders and rehab exercises scheduled for the next 7 days.</p>
       </div>
 
       {loading ? (

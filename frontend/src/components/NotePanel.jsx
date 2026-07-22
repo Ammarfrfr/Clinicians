@@ -7,6 +7,7 @@ import { DrugSearchInput } from './DrugSearchInput.jsx';
 import { ExportModal } from './ExportModal.jsx';
 import { shareOnWhatsApp, generatePrescriptionMessage } from '../utils/whatsappHelper.js';
 import { checkDrugAllergy } from '../utils/allergyChecker.js';
+import { checkDosageSanity, checkDrugInteractions } from '../utils/drugSafetyChecker.js';
 import exercisesDb from '../data/exercises.json';
 import { getPhotoUrls } from '../utils/exercisePhotos.js';
 import { Activity } from 'lucide-react';
@@ -410,17 +411,17 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
   return (
     <aside
       style={!isOpenMobile && desktopWidth ? { width: `${desktopWidth}px` } : undefined}
-      className={`flex flex-col bg-white h-full shrink-0 transition-all duration-200 border-l border-gray-200
+      className={`flex flex-col bg-white h-full shrink-0 transition-all duration-200 border-l border-slate-200/90 select-none
         ${isOpenMobile ? 'fixed inset-0 z-[100] w-full h-full' : 'hidden md:flex w-96'}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white shrink-0">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white shrink-0">
         <div className="flex items-center">
           {onCloseMobile && (
             <button
               type="button"
               onClick={onCloseMobile}
-              className="md:hidden block bg-transparent border-none text-navy p-1 cursor-pointer mr-2 flex items-center justify-center"
+              className="md:hidden block bg-transparent border-none text-slate-900 p-1 cursor-pointer mr-2 flex items-center justify-center"
               title="Back to Recorder"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -429,18 +430,20 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
               </svg>
             </button>
           )}
-          <span className="text-sm font-semibold text-navy">Clinical Note</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="px-2 py-0.5 text-[10.5px] font-semibold rounded-md uppercase tracking-[0.25px] bg-teal-light text-teal-dark">
-            {transcribingSection ? 'Transcribing' : editing ? 'Editing' : 'Generated'}
+          <span
+            className="text-xl font-normal text-[#22252a] tracking-tight"
+            style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
+          >
+            Clinical SOAP Note
           </span>
+        </div>
+        <div className="flex items-center gap-2">
           {note && (
             <button
-              className={`flex items-center justify-center text-gray-400 hover:text-navy border border-gray-200 rounded-lg bg-white cursor-pointer transition-all ${editing ? 'text-red-brand border-red-brand/20 bg-red-brand-light hover:text-red-brand' : ''}`}
+              className={`flex items-center justify-center text-slate-400 hover:text-slate-900 border border-slate-200 rounded-xl bg-white cursor-pointer transition-all ${editing ? 'text-rose-600 border-rose-200 bg-rose-50' : ''}`}
               onClick={toggleEditing}
               title={editing ? 'Save and close editing' : 'Edit note'}
-              style={{ width: '28px', height: '28px' }}
+              style={{ width: '30px', height: '30px' }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {editing ? (
@@ -454,9 +457,9 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 min-h-0">
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 min-h-0">
         {noteError && (
-          <div className="p-3 rounded-xl bg-red-brand-light text-red-brand text-xs flex items-center gap-2 mb-2 border border-red-brand/10">
+          <div className="p-3.5 rounded-xl bg-rose-50 text-rose-700 text-xs flex items-center gap-2 mb-2 border border-rose-200">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline', marginRight: 4 }}>
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
@@ -466,15 +469,14 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
 
         <>
           {/* Compartment A — Clinical Assessment / Text Notes */}
-          <div className="p-4 rounded-xl border mb-3 bg-gray-50/50 border-gray-200/60 text-left">
-            <div className="flex items-center justify-between font-semibold text-sm text-navy mb-1">
+          <div className="p-5 rounded-2xl border mb-3 bg-[#fafafc] border-slate-200/90 text-left shadow-xs">
+            <div className="flex items-center justify-between font-bold text-xs text-slate-900 uppercase tracking-wider font-mono mb-1">
               <span className="flex items-center gap-1.5">
-                <Stethoscope className="w-4 h-4 text-gray-500" />
+                <Stethoscope className="w-4 h-4 text-slate-500" />
                 Clinical Assessment
               </span>
-              <span className="px-1.5 py-0.5 text-[9.5px] font-mono rounded font-semibold uppercase bg-gray-200 text-gray-600">Internal Only</span>
             </div>
-            <div className="text-[11.5px] text-gray-500 mb-4">Not included in the printed prescription copy.</div>
+            <div className="text-[11px] text-slate-400 font-sans mb-4">Not included in printed prescription handout.</div>
             
             {clinicalFields.map(({ key, label, rows, placeholder }) => {
               if (!editing && (!displayNote || !displayNote[key])) return null;
@@ -510,7 +512,6 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                 <ClipboardList className="w-4 h-4 text-teal" />
                 Patient Handout
               </span>
-              <span className="px-1.5 py-0.5 text-[9.5px] font-mono rounded font-semibold uppercase bg-teal-light text-teal-dark">Rx & Shared</span>
             </div>
             <div className="text-[11.5px] text-gray-500 mb-4">Printed on paper and sent to patients.</div>
 
@@ -523,57 +524,86 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                 </div>
                 {editing ? (
                   <div className="flex flex-col gap-2">
-                    {(Array.isArray(editedNote?.prescription) ? editedNote.prescription : []).map((med, idx) => {
-                      const warning = checkDrugAllergy(typeof med === 'object' ? med.drug : String(med), patient?.medicalInfo?.allergies);
+                    {(() => {
+                      const interactionWarnings = checkDrugInteractions(Array.isArray(editedNote?.prescription) ? editedNote.prescription : []);
                       return (
-                        <div key={idx} className="flex flex-col gap-1 w-full mb-1">
-                          <div className="flex gap-1.5 items-center w-full">
-                            <div className="flex-1 min-w-0">
-                              <DrugSearchInput
-                                value={typeof med === 'object' ? med.drug || '' : String(med)}
-                                onChange={(val) => handlePrescriptionChange(idx, 'drug', val)}
-                                onBlur={() => {
-                                  if (recordingId) handleSave(false);
-                                }}
-                                placeholder="Drug name..."
-                                hideIcon={true}
-                              />
-                            </div>
-                            <input
-                              type="text"
-                              value={typeof med === 'object' ? med.dose || '' : ''}
-                              onChange={(e) => handlePrescriptionChange(idx, 'dose', e.target.value)}
-                              onBlur={() => {
-                                  if (recordingId) handleSave(false);
-                              }}
-                              placeholder="Dose"
-                              className="w-10 px-1 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal shrink-0 placeholder:text-[10px]"
-                            />
-                            <input
-                              type="text"
-                              value={typeof med === 'object' ? med.frequency || '' : ''}
-                              onChange={(e) => handlePrescriptionChange(idx, 'frequency', e.target.value)}
-                              onBlur={() => {
-                                  if (recordingId) handleSave(false);
-                              }}
-                              placeholder="Frequency"
-                              className="w-16 px-1 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal shrink-0 placeholder:text-[10px]"
-                            />
-                            <button className="p-1 text-gray-400 hover:text-red-brand bg-transparent border-none cursor-pointer flex items-center justify-center shrink-0" onClick={() => removePrescriptionRow(idx)}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          </div>
-                          {warning && (
-                            <div className="text-[10px] font-semibold text-red-brand bg-red-brand-light/30 border border-red-brand/10 px-2 py-0.5 rounded-md self-start flex items-center gap-1 mt-0.5">
-                              <span>⚠️</span>
-                              <span>{warning.message}</span>
+                        <>
+                          {interactionWarnings.length > 0 && (
+                            <div className="flex flex-col gap-1.5 bg-rose-50 border border-rose-200/60 rounded-xl p-3 mb-2">
+                              <div className="text-[11px] font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1">
+                                <span>🚨</span> Drug-Drug Interactions Detected
+                              </div>
+                              {interactionWarnings.map((warn, wIdx) => (
+                                <div key={wIdx} className="text-[10px] font-medium text-rose-700 leading-normal flex items-start gap-1">
+                                  <span className="shrink-0">•</span>
+                                  <span>{warn.message}</span>
+                                </div>
+                              ))}
                             </div>
                           )}
-                        </div>
+                          {(Array.isArray(editedNote?.prescription) ? editedNote.prescription : []).map((med, idx) => {
+                            const drugName = typeof med === 'object' ? med.drug : String(med);
+                            const doseString = typeof med === 'object' ? med.dose : '';
+                            const warning = checkDrugAllergy(drugName, patient?.medicalInfo?.allergies);
+                            const dosageWarning = checkDosageSanity(drugName, doseString);
+                            return (
+                              <div key={idx} className="flex flex-col gap-1 w-full mb-1">
+                                <div className="flex gap-1.5 items-center w-full">
+                                  <div className="flex-1 min-w-0">
+                                    <DrugSearchInput
+                                      value={typeof med === 'object' ? med.drug || '' : String(med)}
+                                      onChange={(val) => handlePrescriptionChange(idx, 'drug', val)}
+                                      onBlur={() => {
+                                        if (recordingId) handleSave(false);
+                                      }}
+                                      placeholder="Drug name..."
+                                      hideIcon={true}
+                                    />
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={typeof med === 'object' ? med.dose || '' : ''}
+                                    onChange={(e) => handlePrescriptionChange(idx, 'dose', e.target.value)}
+                                    onBlur={() => {
+                                        if (recordingId) handleSave(false);
+                                    }}
+                                    placeholder="Dose"
+                                    className="w-10 px-1 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal shrink-0 placeholder:text-[10px]"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={typeof med === 'object' ? med.frequency || '' : ''}
+                                    onChange={(e) => handlePrescriptionChange(idx, 'frequency', e.target.value)}
+                                    onBlur={() => {
+                                        if (recordingId) handleSave(false);
+                                    }}
+                                    placeholder="Frequency"
+                                    className="w-16 px-1 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal shrink-0 placeholder:text-[10px]"
+                                  />
+                                  <button className="p-1 text-gray-400 hover:text-red-brand bg-transparent border-none cursor-pointer flex items-center justify-center shrink-0" onClick={() => removePrescriptionRow(idx)}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                  </button>
+                                </div>
+                                {warning && (
+                                  <div className="text-[10px] font-semibold text-red-brand bg-red-brand-light/30 border border-red-brand/10 px-2 py-0.5 rounded-md self-start flex items-center gap-1 mt-0.5">
+                                    <span>⚠️</span>
+                                    <span>{warning.message}</span>
+                                  </div>
+                                )}
+                                {dosageWarning && (
+                                  <div className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md self-start flex items-center gap-1 mt-0.5">
+                                    <span>💊</span>
+                                    <span>{dosageWarning.message}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </>
                       );
-                    })}
+                    })()}
                     <button className="inline-flex items-center gap-1 text-xs font-semibold text-teal-dark hover:text-teal bg-transparent border-none cursor-pointer mt-1 self-start" onClick={addPrescriptionRow}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                         <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -583,30 +613,58 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                   </div>
                 ) : (
                   <div className="flex flex-col gap-1.5">
-                    {prescriptionArray.map((med, idx) => {
-                      const drugName = typeof med === 'object' ? med.drug || 'Unknown' : med;
-                      const warning = checkDrugAllergy(drugName, patient?.medicalInfo?.allergies);
+                    {(() => {
+                      const interactionWarnings = checkDrugInteractions(prescriptionArray);
                       return (
-                        <div key={idx} className="flex flex-col gap-1 bg-white border border-gray-100 rounded-xl p-3 shadow-xs text-left">
-                          <div className="flex justify-between items-center text-sm text-gray-700">
-                            <span className="font-medium text-navy">
-                              {drugName}
-                            </span>
-                            {typeof med === 'object' && (med.dose || med.frequency) && (
-                              <span className="text-xs font-semibold text-teal-dark bg-teal-light px-2 py-0.5 rounded">
-                                {med.dose}{med.frequency ? ` · ${med.frequency}` : ''}
-                              </span>
-                            )}
-                          </div>
-                          {warning && (
-                            <div className="text-[10px] font-semibold text-red-brand bg-red-brand-light/30 border border-red-brand/10 px-2 py-0.5 rounded-md self-start flex items-center gap-1 mt-1">
-                              <span>⚠️</span>
-                              <span>{warning.message}</span>
+                        <>
+                          {interactionWarnings.length > 0 && (
+                            <div className="flex flex-col gap-1.5 bg-rose-50 border border-rose-200/60 rounded-xl p-3 mb-2 text-left">
+                              <div className="text-[11px] font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1">
+                                <span>🚨</span> Drug-Drug Interactions Detected
+                              </div>
+                              {interactionWarnings.map((warn, wIdx) => (
+                                <div key={wIdx} className="text-[10px] font-medium text-rose-700 leading-normal flex items-start gap-1">
+                                  <span className="shrink-0">•</span>
+                                  <span>{warn.message}</span>
+                                </div>
+                              ))}
                             </div>
                           )}
-                        </div>
+                          {prescriptionArray.map((med, idx) => {
+                            const drugName = typeof med === 'object' ? med.drug || 'Unknown' : med;
+                            const doseString = typeof med === 'object' ? med.dose || '' : '';
+                            const warning = checkDrugAllergy(drugName, patient?.medicalInfo?.allergies);
+                            const dosageWarning = checkDosageSanity(drugName, doseString);
+                            return (
+                              <div key={idx} className="flex flex-col gap-1 bg-white border border-gray-100 rounded-xl p-3 shadow-xs text-left">
+                                <div className="flex justify-between items-center text-sm text-gray-700">
+                                  <span className="font-medium text-navy">
+                                    {drugName}
+                                  </span>
+                                  {typeof med === 'object' && (med.dose || med.frequency) && (
+                                    <span className="text-xs font-semibold text-teal-dark bg-teal-light px-2 py-0.5 rounded">
+                                      {med.dose}{med.frequency ? ` · ${med.frequency}` : ''}
+                                    </span>
+                                  )}
+                                </div>
+                                {warning && (
+                                  <div className="text-[10px] font-semibold text-red-brand bg-red-brand-light/30 border border-red-brand/10 px-2 py-0.5 rounded-md self-start flex items-center gap-1 mt-1">
+                                    <span>⚠️</span>
+                                    <span>{warning.message}</span>
+                                  </div>
+                                )}
+                                {dosageWarning && (
+                                  <div className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md self-start flex items-center gap-1 mt-1">
+                                    <span>💊</span>
+                                    <span>{dosageWarning.message}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </>
                       );
-                    })}
+                    })()}
                   </div>
                 )}
               </div>
@@ -678,15 +736,14 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
           </div>
 
           {/* Compartment C — Exercises & Rehab (Printable) */}
-          <div className="p-4 rounded-xl border mb-3 bg-teal-light/5 border-teal/10 text-left">
-            <div className="flex items-center justify-between font-semibold text-sm text-navy mb-1">
+          <div className="p-5 rounded-2xl border mb-3 bg-white border-slate-200/90 text-left shadow-xs">
+            <div className="flex items-center justify-between font-bold text-xs text-slate-900 uppercase tracking-wider font-mono mb-1">
               <span className="flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-teal" />
+                <Activity className="w-4 h-4 text-slate-700" />
                 Prescribed Rehabilitation
               </span>
-              <span className="px-1.5 py-0.5 text-[9.5px] font-mono rounded font-semibold uppercase bg-teal-light text-teal-dark">Rx & Printed</span>
             </div>
-            <div className="text-[11.5px] text-gray-500 mb-4">Prescribe standard orthopedic rehab exercises.</div>
+            <div className="text-[11px] text-slate-400 font-sans mb-4">Prescribe standard orthopedic rehab exercises for patient handout.</div>
 
             {editing ? (
               <div className="flex flex-col gap-3">
@@ -694,12 +751,12 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                 {editedNote.exercises && editedNote.exercises.length > 0 && (
                   <div className="flex flex-col gap-2 mb-2">
                     {editedNote.exercises.map((ex, idx) => (
-                      <div key={idx} className="bg-white border border-gray-150 rounded-xl p-3 shadow-xs flex flex-col gap-2">
+                      <div key={idx} className="bg-[#fafafc] border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex flex-col gap-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-navy">{ex.name} <span className="text-[9px] font-mono font-medium text-gray-400">({ex.category})</span></span>
+                          <span className="text-xs font-bold text-slate-900">{ex.name} <span className="text-[9px] font-mono text-slate-400">({ex.category})</span></span>
                           <button
                             type="button"
-                            className="p-1 text-gray-400 hover:text-red-brand bg-transparent border-none cursor-pointer flex items-center justify-center"
+                            className="p-1 text-slate-400 hover:text-rose-600 bg-transparent border-none cursor-pointer flex items-center justify-center"
                             onClick={() => {
                               setEditedNote(prev => ({
                                 ...prev,
@@ -714,7 +771,7 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-bold text-gray-400 uppercase">Sets</label>
+                            <label className="text-[9px] font-mono font-bold text-slate-400 uppercase">Sets</label>
                             <input
                               type="text"
                               value={ex.sets || ''}
@@ -726,11 +783,11 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                                   return { ...prev, exercises: updated };
                                 });
                               }}
-                              className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
+                              className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono"
                             />
                           </div>
                           <div className="flex flex-col gap-0.5">
-                            <label className="text-[9px] font-bold text-gray-400 uppercase">Reps</label>
+                            <label className="text-[9px] font-mono font-bold text-slate-400 uppercase">Reps</label>
                             <input
                               type="text"
                               value={ex.reps || ''}
@@ -742,12 +799,6 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                                   return { ...prev, exercises: updated };
                                 });
                               }}
-                              className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal"
-                            />
-                          </div>
-                          <div className="flex flex-col gap-0.5 col-span-2">
-                            <label className="text-[9px] font-bold text-gray-400 uppercase">Frequency</label>
-                            <input
                               type="text"
                               value={ex.frequency || ''}
                               placeholder="e.g. Twice Daily"
@@ -898,22 +949,41 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1.5 leading-relaxed">{ex.instruction}</div>
-                      {photos && (
+                      {(ex.imageStart || ex.imageEnd || photos) && (
                         <details className="mt-2">
-                          <summary className="text-[10px] font-semibold text-teal-dark cursor-pointer select-none flex items-center gap-1 hover:text-teal transition-colors" style={{listStyle:'none'}}>
-                            <span>📷</span> {photos.exact ? 'See Real Demo' : 'See Similar Exercise'}
+                          <summary className="text-[10px] font-mono font-bold text-slate-700 cursor-pointer select-none flex items-center gap-1 hover:text-slate-900 transition-colors" style={{listStyle:'none'}}>
+                            View Exercise Demonstration
                           </summary>
                           <div className="mt-2 grid grid-cols-2 gap-2">
                             <div className="flex flex-col items-center gap-1">
-                              <img src={photos.start} alt="Start position" className="w-full rounded-lg border border-gray-100" style={{aspectRatio:'3/4', objectFit:'cover', background:'#f5f3ee'}} loading="lazy" />
-                              <span className="text-[8px] font-mono text-gray-400 uppercase">Start</span>
+                              <img
+                                src={ex.imageStart || photos?.start}
+                                alt="Start position"
+                                className="w-full rounded-lg border border-slate-200"
+                                style={{aspectRatio:'4/3', objectFit:'cover', background:'#f8fafc'}}
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=400&q=80';
+                                }}
+                              />
+                              <span className="text-[8px] font-mono text-slate-400 uppercase">Start Position</span>
                             </div>
                             <div className="flex flex-col items-center gap-1">
-                              <img src={photos.end} alt="End position" className="w-full rounded-lg border border-gray-100" style={{aspectRatio:'3/4', objectFit:'cover', background:'#f5f3ee'}} loading="lazy" />
-                              <span className="text-[8px] font-mono text-gray-400 uppercase">End</span>
+                              <img
+                                src={ex.imageEnd || photos?.end}
+                                alt="End position"
+                                className="w-full rounded-lg border border-slate-200"
+                                style={{aspectRatio:'4/3', objectFit:'cover', background:'#f8fafc'}}
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=400&q=80';
+                                }}
+                              />
+                              <span className="text-[8px] font-mono text-slate-400 uppercase">Extension Position</span>
                             </div>
                           </div>
-                          {!photos.exact && <div className="text-[9px] text-gray-400 italic mt-1.5 text-center">💡 Showing a similar exercise for reference</div>}
                         </details>
                       )}
                     </div>
@@ -936,25 +1006,33 @@ export function NotePanel({ note, noteError, loading, patient, doctor, transcrip
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 px-4 py-3 border-t border-gray-100 bg-gray-50/50 shrink-0">
-        <button className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-teal hover:bg-teal-dark text-navy font-semibold text-xs rounded-xl transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed flex-1" onClick={() => handleSave(true)} disabled={saving || saved}>
+      <div className="flex gap-2 p-4 border-t border-slate-100 bg-[#fafafc] shrink-0">
+        <button
+          className="flex-1 py-2.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-xs border-none flex items-center justify-center gap-1.5 disabled:opacity-50"
+          onClick={() => handleSave(true)}
+          disabled={saving || saved}
+        >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             {saved ? <polyline points="20 6 9 17 4 12" /> : <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />}
           </svg>
           {saving ? 'Saving...' : saved ? 'Saved' : 'Save Visit'}
         </button>
 
-        <button className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-navy font-semibold text-xs rounded-xl transition-all cursor-pointer" onClick={() => setShowExportModal(true)}>
+        <button
+          className="px-3.5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+          onClick={() => setShowExportModal(true)}
+        >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
           </svg>
           Print / Export
         </button>
 
-        <button className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-navy font-semibold text-xs rounded-xl transition-all cursor-pointer" onClick={handleCopy}>
+        <button
+          className="px-3 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+          onClick={handleCopy}
+        >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <rect x="9" y="9" width="13" height="13" rx="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
