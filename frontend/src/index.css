@@ -1,21 +1,53 @@
 @import url('/font/stylesheet.css');
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Font187';
+  src: url('/font/187CDB6B8976F9EE-S.P_0.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --color-navy: #0d1b2a;
-  --color-navy-light: #1b263b;
-  --color-teal: #0ea5a0;
-  --color-teal-dark: #0b8480;
-  --color-teal-light: #e6f6f5;
-  --color-warm-white: #f8f6f1;
-  --color-warm-white-dark: #f0ede4;
+  --color-navy: #0A2947;
+  --color-navy-light: #163f66;
+  --color-teal: #8B5E3C;
+  --color-teal-dark: #6e482d;
+  --color-teal-light: #F3E4C9;
+  --color-warm-white: #F3E4C9;
+  --color-warm-white-dark: #D3D4C0;
   --color-red-brand: #e05555;
   --color-red-brand-light: #fdf2f2;
+  --color-sage: #D3D4C0;
+  --color-brown: #8B5E3C;
 
-  --font-serif: 'Kalice-Trial', serif;
+  --font-serif: 'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', serif;
   --font-sans: 'DM Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
+  --font-187: 'Font187', serif;
+}
+
+.font-187 {
+  font-family: 'Font187', serif;
+}
+
+.heidi-card {
+  background-color: #ffffff;
+  border: 1px solid #D3D4C0;
+  border-radius: 1rem;
+}
+
+.heidi-pill {
+  background-color: #ffffff;
+  border: 1px solid #D3D4C0;
+  border-radius: 9999px;
+  color: #0A2947;
+}
+
+.heidi-bg {
+  background-color: #F3E4C9;
 }
 
 @layer base {
@@ -25,7 +57,7 @@
 
   html, body {
     overscroll-behavior: none;
-    background-color: #f8f6f1; /* Match --color-warm-white */
+    background-color: #F3E4C9;
   }
 
   body {
@@ -136,5 +168,59 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Google Docs-style paper sheet */
+.doc-sheet {
+  max-width: 760px;
+  margin: 1.5rem auto;
+  background: white;
+  padding: 3rem 3.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 24px rgba(0,0,0,.04);
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 2px;
+  min-height: 10.5in;
+  position: relative;
+}
+
+.doc-sheet-bg {
+  background: #F3E4C9;
+}
+
+/* Letterhead paper */
+.letterhead {
+  max-width: 760px;
+  margin: 1.5rem auto;
+  background: white;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 24px rgba(0,0,0,.04);
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 2px;
+  min-height: 10.5in;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Keep-style sticky note pop-in */
+@keyframes keepPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.keep-note {
+  animation: keepPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.context-rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: #a3a3a3;
+  pointer-events: none;
+  display: block;
 }
 

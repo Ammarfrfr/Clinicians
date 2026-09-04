@@ -2,11 +2,15 @@ import { useEffect, useRef } from 'react';
 
 export function Recorder({
   recording,
+  isPaused,
   loading,
   timer,
   processingStep,
   onStart,
   onStop,
+  onPause,
+  onResume,
+  onCancel,
   retryAvailable,
   transcriptionError,
   onRetry,
@@ -26,20 +30,20 @@ export function Recorder({
     const height = canvas.height;
 
     const animate = () => {
-      ctx.fillStyle = '#fafafc';
+      ctx.fillStyle = '#F3E4C9';
       ctx.fillRect(0, 0, width, height);
 
-      const bars = 50;
+      const bars = 40;
       const barWidth = width / bars;
       const maxBarHeight = height * 0.75;
 
       for (let i = 0; i < bars; i++) {
-        const randomHeight = recording ? Math.random() * maxBarHeight + 6 : maxBarHeight * 0.12;
+        const randomHeight = (recording && !isPaused) ? Math.random() * maxBarHeight + 6 : maxBarHeight * 0.12;
         const x = i * barWidth + barWidth * 0.2;
         const w = barWidth * 0.6;
         const y = (height - randomHeight) / 2;
 
-        ctx.fillStyle = recording ? '#22252a' : '#cbd5e1';
+        ctx.fillStyle = (recording && !isPaused) ? '#8B5E3C' : '#D3D4C0';
         ctx.beginPath();
         ctx.roundRect(x, y, w, randomHeight, 2);
         ctx.fill();
@@ -55,125 +59,152 @@ export function Recorder({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [recording, loading]);
+  }, [recording, isPaused, loading]);
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const formatTimer = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs shrink-0 select-none">
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
-          Ambient Audio Stream
-        </span>
-        {recording && (
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700">
-            <div className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest">LIVE REC</span>
+    <div className="flex flex-col gap-4 w-full select-none">
+      {/* Audio Wave Visualizer - only show when recording or transcribing */}
+      {(recording || loading) && (
+        <div className="flex flex-col gap-2 p-3 bg-[#F3E4C9]/50 rounded-xl border border-[#D3D4C0] transition-all">
+          <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-wider text-[#0A2947]/70">
+            <span>{recording ? (isPaused ? "Recording Paused" : "Ambient Audio Live Stream") : "Processing Audio..."}</span>
+            {recording && (
+              <span className={`font-mono ${isPaused ? 'text-amber-600' : 'text-[#8B5E3C] animate-pulse'}`}>
+                {isPaused ? "⏸ PAUSED" : "● LIVE REC"} ({formatTimer(timer)})
+              </span>
+            )}
           </div>
-        )}
-      </div>
+          <canvas
+            ref={canvasRef}
+            className="w-full h-12 bg-[#F3E4C9] rounded-lg border border-[#D3D4C0]/60"
+            width={400}
+            height={50}
+          />
+        </div>
+      )}
 
-      <div className="flex flex-col gap-5">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-20 bg-[#fafafc] rounded-xl border border-slate-200/60"
-          width={500}
-          height={80}
-        />
-
-        {retryAvailable ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2.5 text-rose-700 text-xs bg-rose-50 border border-rose-200 p-3.5 rounded-xl font-medium">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="shrink-0">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <span>{transcriptionError || "Recording failed to transcribe."}</span>
-            </div>
-            <div className="flex gap-3">
-              <button
-                className="bg-[#22252a] hover:bg-[#1a1c20] text-white border-none px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                onClick={onRetry}
-              >
-                Retry Upload
-              </button>
-              <button
-                className="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5"
-                onClick={onReRecord}
-              >
-                Record Again
-              </button>
-            </div>
+      {/* Upload Retry State */}
+      {retryAvailable && (
+        <div className="flex flex-col gap-2 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-left">
+          <div className="flex items-center gap-2 text-rose-700 text-xs font-semibold">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{transcriptionError || "Recording failed to transcribe."}</span>
           </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between gap-5">
-              <div className="flex items-center gap-4">
-                <button
-                  className={`w-14 h-14 rounded-2xl border-none flex items-center justify-center cursor-pointer transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
-                    recording ? 'bg-rose-600 text-white animate-pulse' : 'bg-[#22252a] text-white hover:scale-105'
-                  }`}
-                  onClick={recording ? onStop : onStart}
-                  disabled={loading}
-                >
-                  {recording ? (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="6" y="6" width="12" height="12" rx="2" />
-                    </svg>
-                  ) : (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="12" r="8" />
-                    </svg>
-                  )}
-                </button>
+          <div className="flex gap-2 mt-1">
+            <button
+              className="bg-[#8B5E3C] hover:bg-[#6e482d] text-white border-none px-3.5 py-2 rounded-lg text-[11px] font-bold cursor-pointer transition-all shadow-sm"
+              onClick={onRetry}
+            >
+              Retry Upload
+            </button>
+            <button
+              className="bg-white border border-[#D3D4C0] text-[#0A2947] px-3.5 py-2 rounded-lg text-[11px] font-bold cursor-pointer hover:bg-[#F3E4C9]/40 transition-all"
+              onClick={onReRecord}
+            >
+              Record Again
+            </button>
+          </div>
+        </div>
+      )}
 
-                <div className="flex flex-col gap-0.5 text-left">
-                  <div className="font-mono text-2xl font-black text-[#22252a] tracking-tight">
-                    {formatTime(timer)}
-                  </div>
-                  <div className={`text-xs font-semibold ${recording ? 'text-rose-600' : 'text-slate-500'}`}>
-                    {recording ? 'Ambient recording active...' : loading ? 'AI Transcribing & Structuring SOAP...' : 'Click button to start recording consultation'}
-                  </div>
-                </div>
-              </div>
+      {/* AI Processing Steps Tracker */}
+      {loading && (
+        <div className="flex justify-between bg-[#F3E4C9]/60 rounded-xl p-3 border border-[#D3D4C0]">
+          <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase transition-colors ${processingStep >= 1 ? 'text-[#0A2947]' : 'text-[#0A2947]/40'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${processingStep >= 1 ? 'bg-[#8B5E3C]' : 'bg-[#D3D4C0]'}`} />
+            <span>Transcribing</span>
+          </div>
+          <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase transition-colors ${processingStep >= 2 ? 'text-[#0A2947]' : 'text-[#0A2947]/40'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${processingStep >= 2 ? 'bg-[#8B5E3C]' : 'bg-[#D3D4C0]'}`} />
+            <span>Structuring SOAP</span>
+          </div>
+          <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase transition-colors ${processingStep >= 3 ? 'text-[#0A2947]' : 'text-[#0A2947]/40'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${processingStep >= 3 ? 'bg-[#8B5E3C]' : 'bg-[#D3D4C0]'}`} />
+            <span>CDSCO Check</span>
+          </div>
+        </div>
+      )}
 
-              {recording && (
+      {/* Action Controls (Starts, Stops, Pauses, Resumes, Cancels recording) */}
+      {!retryAvailable && !loading && (
+        <div className="flex items-center justify-center gap-2 w-full mt-2">
+          {recording ? (
+            <>
+              {/* Cancel / Discard (Wrong Button) */}
+              <button
+                onClick={onCancel}
+                className="w-10 h-10 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 border border-slate-200 cursor-pointer transition-all flex items-center justify-center shadow-xs shrink-0"
+                title="Cancel & Discard Recording"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              {/* Pause / Resume Button */}
+              {isPaused ? (
                 <button
-                  onClick={onStop}
-                  className="px-5 py-2.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-mono font-bold text-xs rounded-xl transition-all cursor-pointer shadow-md border-none flex items-center gap-2"
+                  onClick={onResume}
+                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wide rounded-full cursor-pointer transition-all flex items-center gap-2 border-none shadow-md"
+                  title="Resume Recording"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                    <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
-                  Stop & Compile SOAP Note
+                  Resume
+                </button>
+              ) : (
+                <button
+                  onClick={onPause}
+                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wide rounded-full cursor-pointer transition-all flex items-center gap-2 border-none shadow-md"
+                  title="Pause Recording"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                  </svg>
+                  Pause
                 </button>
               )}
-            </div>
 
-            {loading && (
-              <div className="flex justify-between bg-slate-50 rounded-xl p-3.5 px-4 border border-slate-200/80">
-                <div className={`flex items-center gap-2 text-xs font-bold transition-colors ${processingStep >= 1 ? 'text-slate-900' : 'text-slate-400'}`}>
-                  <span className={`w-2 h-2 rounded-full ${processingStep >= 1 ? 'bg-slate-900' : 'bg-slate-300'}`} />
-                  <span>Transcribing</span>
-                </div>
-                <div className={`flex items-center gap-2 text-xs font-bold transition-colors ${processingStep >= 2 ? 'text-slate-900' : 'text-slate-400'}`}>
-                  <span className={`w-2 h-2 rounded-full ${processingStep >= 2 ? 'bg-slate-900' : 'bg-slate-300'}`} />
-                  <span>Structuring SOAP</span>
-                </div>
-                <div className={`flex items-center gap-2 text-xs font-bold transition-colors ${processingStep >= 3 ? 'text-slate-900' : 'text-slate-400'}`}>
-                  <span className={`w-2 h-2 rounded-full ${processingStep >= 3 ? 'bg-slate-900' : 'bg-slate-300'}`} />
-                  <span>CDSCO Check</span>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              {/* Stop & Compile Note */}
+              <button
+                onClick={onStop}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wide rounded-full cursor-pointer transition-all flex items-center gap-2 border-none shadow-md"
+                title="Stop & Compile Note"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+                Stop & Compile
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onStart}
+              className="px-6 py-3 bg-[#8B5E3C] hover:bg-[#6e482d] text-white font-bold text-xs uppercase tracking-wide rounded-full cursor-pointer transition-all flex items-center gap-2 border-none shadow-md"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+              </svg>
+              Start Recording
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

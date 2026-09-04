@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../config.js';
+
 export function generateClinicalNotePDF(note, patient = {}, doctor = {}, includeSections = null, options = {}) {
   // Default: include all sections
   const sections = includeSections || {
@@ -40,16 +42,29 @@ export function generateClinicalNotePDF(note, patient = {}, doctor = {}, include
   };
 
   // Generate prescription table rows
-  const prescriptionRows = Array.isArray(note.prescription)
+  const prescriptionRows = Array.isArray(note.prescription) && note.prescription.length > 0
     ? note.prescription
         .map((med, idx) => {
-          if (!med || typeof med !== 'object') return '';
+          if (!med) return '';
+          if (typeof med === 'string') {
+            return `
+        <tr class="rx-row">
+          <td class="rx-num">${String(idx + 1).padStart(2, '0')}</td>
+          <td>
+            <div class="rx-name">${escapeHtml(med.replace(/^-/, '').trim())}</div>
+          </td>
+          <td style="text-align:right;vertical-align:middle;">
+            <span class="rx-route">Oral</span>
+          </td>
+        </tr>`;
+          }
+          const doseDetails = [med.dose, med.frequency, med.timing].filter(Boolean).join(' — ');
           return `
         <tr class="rx-row">
           <td class="rx-num">${String(idx + 1).padStart(2, '0')}</td>
           <td>
             <div class="rx-name">${escapeHtml(med.drug || 'Unknown')}</div>
-            <div class="rx-dose">${escapeHtml(med.dose || '')}${med.frequency ? ' — ' + escapeHtml(med.frequency) : ''}</div>
+            <div class="rx-dose">${escapeHtml(doseDetails || 'As directed')}</div>
           </td>
           <td style="text-align:right;vertical-align:middle;">
             <span class="rx-route">${escapeHtml(med.route || 'Oral')}</span>
@@ -57,7 +72,18 @@ export function generateClinicalNotePDF(note, patient = {}, doctor = {}, include
         </tr>`;
         })
         .join('')
-    : '';
+    : (note.medications
+        ? String(note.medications).split('\n').filter(Boolean).map((line, idx) => `
+        <tr class="rx-row">
+          <td class="rx-num">${String(idx + 1).padStart(2, '0')}</td>
+          <td>
+            <div class="rx-name">${escapeHtml(line.replace(/^-/, '').trim())}</div>
+          </td>
+          <td style="text-align:right;vertical-align:middle;">
+            <span class="rx-route">Oral</span>
+          </td>
+        </tr>`).join('')
+        : '');
 
   const exArray = Array.isArray(note.exercises) ? note.exercises : [];
   const exerciseRows = exArray
@@ -75,7 +101,7 @@ export function generateClinicalNotePDF(note, patient = {}, doctor = {}, include
     })
     .join('');
 
-  const apiBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:7001';
+  const apiBaseUrl = API_BASE_URL;
   const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(`${apiBaseUrl}/api/share/exercises?ids=${exArray.map(e => e.id).join(',')}`)}`;
 
   const exercisesSection = (sections.exercises !== false && exArray.length > 0)

@@ -34,24 +34,8 @@ const recordingSchema = new Schema(
       hasSpokenLabels: Boolean,
     },
     clinicalNote: {
-      chief_complaint: String,
-      history: String,
-      examination: String,
-      diagnosis: String,
-      prescription: mongoose.Schema.Types.Mixed, // Accept both string and array
-      followup: String,
-      notes: String,
-      exercises: [
-        {
-          id: String,
-          name: String,
-          category: String,
-          sets: String,
-          reps: String,
-          frequency: String,
-          instruction: String,
-        }
-      ],
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     vitals: {
       systolic: Number,

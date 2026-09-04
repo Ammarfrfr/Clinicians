@@ -12,155 +12,158 @@
  * (handled separately in NotePanel), so they are NOT listed in sections.
  */
 
-const DEFAULT_SECTIONS = [
-  { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Main symptom, severity, duration...' },
-  { key: 'history', label: 'History', rows: 4, placeholder: 'Patient history, medications tried, risk factors...' },
-  { key: 'examination', label: 'Examination', rows: 4, placeholder: 'Physical findings, vitals, test results...' },
-  { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'Clinical impression or confirmed diagnosis...' },
-];
 
 export const NOTE_TEMPLATES = {
-  'General Practice': {
-    id: 'general',
-    label: 'General SOAP',
-    icon: '🩺',
-    sections: DEFAULT_SECTIONS,
-  },
-
-  'Cardiology': {
-    id: 'cardiology',
-    label: 'Cardiology',
-    icon: '❤️',
+  'SOAP': {
+    id: 'soap',
+    label: 'SOAP',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Chest pain, dyspnea, palpitations, syncope...' },
-      { key: 'history', label: 'Cardiovascular History', rows: 4, placeholder: 'Cardiac risk factors, family history of CAD, HTN, DM, smoking, lipids...' },
-      { key: 'examination', label: 'Cardiovascular Examination', rows: 4, placeholder: 'JVP, heart sounds, murmurs, peripheral pulses, edema...' },
-      { key: 'investigations', label: 'ECG / Echo / Investigations', rows: 3, placeholder: 'ECG findings, Echo report, stress test, Holter, catheterization...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'ACS, CHF, AF, VHD, HTN...' },
-    ],
+      { key: 'subjective', label: 'Subjective', rows: 3, placeholder: 'Patient history, symptoms, onset...' },
+      { key: 'objective', label: 'Objective', rows: 3, placeholder: 'Physical exam findings, test results, vitals...' },
+      { key: 'assessment', label: 'Assessment', rows: 3, placeholder: 'Differential diagnosis, clinical impression...' },
+      { key: 'plan', label: 'Plan', rows: 3, placeholder: 'Prescriptions, follow up instructions, care plan...' }
+    ]
   },
-
-  'Orthopedics': {
-    id: 'orthopedics',
-    label: 'Orthopedics',
-    icon: '🦴',
+  'Patient Handout': {
+    id: 'patient_handout',
+    label: 'Patient Handout',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Joint pain, fracture, deformity, restricted movement...' },
-      { key: 'history', label: 'Musculoskeletal History', rows: 4, placeholder: 'Mechanism of injury, onset, previous surgeries, occupation...' },
-      { key: 'examination', label: 'Musculoskeletal Examination', rows: 4, placeholder: 'Inspection, ROM, tenderness, special tests (Lachman, McMurray, etc.)...' },
-      { key: 'imaging', label: 'Imaging / Investigations', rows: 3, placeholder: 'X-ray findings, MRI report, CT scan, bone density...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'Fracture type, OA grade, ligament tear, disc herniation...' },
-      { key: 'plan', label: 'Management Plan', rows: 3, placeholder: 'Conservative vs surgical, immobilization, physiotherapy plan...' },
-    ],
+      { key: 'diagnosis_summary', label: 'What We Found', rows: 3, placeholder: 'Simple explanation of diagnosis...' },
+      { key: 'medications', label: 'Your Medications', rows: 3, placeholder: 'Medicines prescribed with instructions...' },
+      { key: 'exercises', label: 'Exercises & Rehabilitation', rows: 3, placeholder: 'Prescribed exercises with instructions...' },
+      { key: 'lifestyle_advice', label: 'Lifestyle Advice', rows: 2, placeholder: 'Diet, activity, rest instructions...' },
+      { key: 'warning_signs', label: 'When to Seek Immediate Care', rows: 2, placeholder: 'Red flag symptoms to watch for...' },
+      { key: 'followup', label: 'Next Appointment & Advice', rows: 2, placeholder: 'Follow-up date and instructions...' },
+    ]
   },
-
-  'Pediatrics': {
-    id: 'pediatrics',
-    label: 'Pediatrics',
-    icon: '👶',
+  'Discharge Summary': {
+    id: 'discharge_summary',
+    label: 'Discharge Summary',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Presenting Complaint', rows: 2, placeholder: 'Fever, cough, diarrhea, rash, poor feeding...' },
-      { key: 'history', label: 'History (incl. Birth & Feeding)', rows: 4, placeholder: 'Birth history, immunization, feeding, milestones, family history...' },
-      { key: 'examination', label: 'Systemic Examination', rows: 4, placeholder: 'Growth parameters, fontanelle, ENT, chest, abdomen, CNS...' },
-      { key: 'milestones', label: 'Developmental Milestones', rows: 2, placeholder: 'Gross motor, fine motor, language, social milestones for age...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'Clinical impression...' },
-    ],
+      { key: 'admission_date', label: 'Admission Date', rows: 1, placeholder: 'Date of admission...' },
+      { key: 'discharge_date', label: 'Discharge Date', rows: 1, placeholder: 'Date of discharge...' },
+      { key: 'primary_diagnosis', label: 'Primary Discharge Diagnosis', rows: 2, placeholder: 'Main diagnosis on discharge...' },
+      { key: 'secondary_diagnoses', label: 'Secondary Diagnoses', rows: 2, placeholder: 'Comorbidities & secondary diagnoses...' },
+      { key: 'reason_for_admission', label: 'Reason for Admission', rows: 2, placeholder: 'Chief complaint & reason for stay...' },
+      { key: 'key_investigations_procedures', label: 'Key Investigations & Procedures', rows: 4, placeholder: 'Tests, imaging, labs, & procedures done...' },
+      { key: 'hospital_course', label: 'Hospital Course', rows: 5, placeholder: 'Chronological summary of hospital stay...' },
+      { key: 'condition_at_discharge', label: 'Condition at Discharge', rows: 2, placeholder: 'Clinical state at discharge...' },
+      { key: 'discharge_medications', label: 'Discharge Medications', rows: 3, placeholder: 'Meds, doses, and frequency...' },
+      { key: 'discharge_instructions', label: 'Discharge Instructions', rows: 3, placeholder: 'Diet, wound care, restrictions...' },
+      { key: 'followup', label: 'Follow-up & Pending Results', rows: 2, placeholder: 'Follow-up timeline and pending lab tests...' },
+    ]
   },
-
-  'Psychiatry': {
-    id: 'psychiatry',
-    label: 'Psychiatry',
-    icon: '🧠',
+  'Sick Note': {
+    id: 'sick_note',
+    label: 'Sick Note',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Presenting Complaint', rows: 2, placeholder: 'Low mood, anxiety, insomnia, substance use, behavioral change...' },
-      { key: 'history', label: 'Psychiatric History', rows: 4, placeholder: 'Onset, course, precipitating factors, past episodes, substance history, family history...' },
-      { key: 'mse', label: 'Mental State Examination (MSE)', rows: 5, placeholder: 'Appearance, behavior, speech, mood/affect, thought form/content, perception, cognition, insight, judgment...' },
-      { key: 'risk_assessment', label: 'Risk Assessment', rows: 2, placeholder: 'Suicidal ideation, self-harm, harm to others, vulnerability...' },
-      { key: 'diagnosis', label: 'Diagnosis (ICD/DSM)', rows: 2, placeholder: 'MDD, GAD, Bipolar, Schizophrenia, PTSD...' },
-    ],
+      { key: 'assessment_date', label: 'Assessment Date', rows: 1, placeholder: 'Date of clinical assessment...' },
+      { key: 'reason_for_absence', label: 'Reason for Absence', rows: 2, placeholder: 'General authorized clinical reason...' },
+      { key: 'absence_period', label: 'Recommended Absence Period', rows: 2, placeholder: 'E.g. 3 days (from Date to Date)...' },
+      { key: 'work_restrictions', label: 'Work / Duty Restrictions', rows: 2, placeholder: 'Specific work or physical activity restrictions...' },
+      { key: 'notes', label: 'Certificate Remarks', rows: 2, placeholder: 'Additional clinical remarks...' },
+    ]
   },
-
-  'Dermatology': {
-    id: 'dermatology',
-    label: 'Dermatology',
-    icon: '🧴',
+  'Admission Note': {
+    id: 'admission_note',
+    label: 'Admission Note',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Rash, itching, pigmentation, hair loss, nail changes...' },
-      { key: 'history', label: 'Dermatological History', rows: 4, placeholder: 'Duration, progression, triggers, medications tried, atopic history...' },
-      { key: 'examination', label: 'Lesion Description', rows: 4, placeholder: 'Morphology (macule, papule, plaque), distribution, color, borders, surface, arrangement...' },
-      { key: 'investigations', label: 'Investigations', rows: 2, placeholder: 'KOH mount, skin biopsy, patch test, dermoscopy findings...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'Eczema, psoriasis, fungal infection, contact dermatitis...' },
-    ],
+      { key: 'patient_identification', label: 'Patient Identification', rows: 2, placeholder: 'Name, age, gender, MRN...' },
+      { key: 'presenting_complaint', label: 'Presenting Complaint', rows: 2, placeholder: 'Reason for admission...' },
+      { key: 'hpi', label: 'History of Present Illness', rows: 4, placeholder: 'Detailed history of symptoms...' },
+      { key: 'pmh', label: 'Past Medical History', rows: 3, placeholder: 'Comorbidities, past surgical history...' },
+      { key: 'meds_allergies', label: 'Medications & Allergies', rows: 2, placeholder: 'Current meds and documented allergies...' },
+      { key: 'exam', label: 'Systemic Examination', rows: 4, placeholder: 'Vitals, general physical, cardiac, resp...' },
+      { key: 'plan', label: 'Initial Treatment Plan', rows: 3, placeholder: 'Admit orders, IV fluids, initial drugs...' },
+    ]
   },
-
-  'ENT': {
-    id: 'ent',
-    label: 'ENT',
-    icon: '👂',
+  'Consult Note': {
+    id: 'consult_note',
+    label: 'Consult Note',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Ear pain, hearing loss, sore throat, nasal obstruction, vertigo...' },
-      { key: 'history', label: 'ENT History', rows: 4, placeholder: 'Duration, laterality, discharge, tinnitus, snoring, voice change...' },
-      { key: 'examination', label: 'ENT Examination', rows: 4, placeholder: 'Otoscopy, anterior rhinoscopy, oropharynx, neck palpation, tuning fork tests...' },
-      { key: 'investigations', label: 'Investigations', rows: 2, placeholder: 'Audiometry, tympanometry, CT PNS, FNAC, endoscopy...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'CSOM, DNS, tonsillitis, sinusitis, BPPV...' },
-    ],
+      { key: 'reason_for_consult', label: 'Reason for Consultation', rows: 2, placeholder: 'Why was consult requested?' },
+      { key: 'hpi', label: 'History of Present Illness', rows: 4, placeholder: 'Relevant history...' },
+      { key: 'examination', label: 'Findings / Examination', rows: 4, placeholder: 'Physical exam findings...' },
+      { key: 'diagnosis', label: 'Impression / Diagnosis', rows: 2, placeholder: 'Clinical impression...' },
+      { key: 'recommendations', label: 'Recommendations', rows: 4, placeholder: 'Treatment/management advice...' },
+    ]
   },
-
-  'Obstetrics & Gynecology': {
-    id: 'obgyn',
-    label: 'OB-GYN',
-    icon: '🤰',
+  'Surgery Consult': {
+    id: 'surgery_consult',
+    label: 'Surgery Consult',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Presenting Complaint', rows: 2, placeholder: 'Amenorrhea, bleeding, discharge, pain, pregnancy follow-up...' },
-      { key: 'history', label: 'OB-GYN History', rows: 4, placeholder: 'Menstrual history (LMP, cycle), obstetric history (GPAL), contraception, sexual history...' },
-      { key: 'examination', label: 'Examination', rows: 4, placeholder: 'Per abdomen (fundal height, FHS), per speculum, per vaginum, cervical findings...' },
-      { key: 'investigations', label: 'Investigations', rows: 2, placeholder: 'USG findings, blood work, Pap smear, GTT, anomaly scan...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'Intrauterine pregnancy, PCOS, fibroid, PID...' },
-    ],
+      { key: 'consult_question', label: 'Consultation Question', rows: 2, placeholder: 'Surgical consult question...' },
+      { key: 'relevant_history', label: 'Relevant Clinical History', rows: 4, placeholder: 'HPI and surgical history...' },
+      { key: 'examination_findings', label: 'Examination Findings', rows: 4, placeholder: 'Physical exam findings...' },
+      { key: 'investigations_reviewed', label: 'Investigations Reviewed', rows: 3, placeholder: 'Labs, CT/MRI, X-rays...' },
+      { key: 'impression', label: 'Surgical Impression', rows: 3, placeholder: 'Impression & operative indication...' },
+      { key: 'recommendations', label: 'Surgical Recommendations', rows: 4, placeholder: 'Surgical management plan & orders...' },
+    ]
   },
-
-  'Internal Medicine': {
-    id: 'internal_medicine',
-    label: 'Internal Medicine',
-    icon: '🏥',
-    sections: DEFAULT_SECTIONS,
-  },
-
-  'Ophthalmology': {
-    id: 'ophthalmology',
-    label: 'Ophthalmology',
-    icon: '👁️',
+  'Referral Letter': {
+    id: 'referral_letter',
+    label: 'Referral Letter',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Blurred vision, redness, pain, discharge, floaters, flashes...' },
-      { key: 'history', label: 'Ophthalmic History', rows: 4, placeholder: 'Duration, laterality, glasses history, DM/HTN, previous eye surgery...' },
-      { key: 'examination', label: 'Eye Examination', rows: 4, placeholder: 'VA (R/L), IOP, slit-lamp, fundoscopy, pupil reactions, EOM...' },
-      { key: 'investigations', label: 'Investigations', rows: 2, placeholder: 'OCT, FFA, visual fields, B-scan, refraction...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'Cataract, glaucoma, DR, AMD, conjunctivitis...' },
-    ],
+      { key: 'recipient', label: 'Recipient Doctor Details', rows: 2, placeholder: 'Dr. Name, specialty, hospital...' },
+      { key: 'introduction', label: 'Patient Introduction', rows: 2, placeholder: 'Patient name, age, gender...' },
+      { key: 'history_diagnosis', label: 'Clinical History & Diagnosis', rows: 4, placeholder: 'Summary of clinical presentation...' },
+      { key: 'purpose', label: 'Purpose of Referral', rows: 2, placeholder: 'Reason for sending the patient...' },
+    ]
   },
-
-  'Surgery': {
-    id: 'surgery',
-    label: 'Surgery',
-    icon: '🔪',
+  'History & Physical': {
+    id: 'history_physical',
+    label: 'History & Physical',
+    icon: '',
     sections: [
-      { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Abdominal pain, lump, bleeding, obstruction...' },
-      { key: 'history', label: 'Surgical History', rows: 4, placeholder: 'Duration, progression, past surgeries, comorbidities, anesthesia history...' },
-      { key: 'examination', label: 'Examination', rows: 4, placeholder: 'Local examination, systemic examination, per rectal, per abdomen...' },
-      { key: 'investigations', label: 'Investigations', rows: 2, placeholder: 'Blood work, imaging (USG/CT/MRI), endoscopy, biopsy...' },
-      { key: 'diagnosis', label: 'Diagnosis', rows: 2, placeholder: 'Appendicitis, hernia, cholecystitis, malignancy...' },
-      { key: 'plan', label: 'Surgical Plan', rows: 3, placeholder: 'Procedure planned, pre-op workup, consent, post-op care...' },
-    ],
+      { key: 'chief_complaint', label: 'Chief Complaint', rows: 2, placeholder: 'Reason for encounter...' },
+      { key: 'hpi', label: 'History of Present Illness', rows: 4, placeholder: 'HPI details...' },
+      { key: 'past_history', label: 'Past Medical/Surgical History', rows: 3, placeholder: 'Prior history...' },
+      { key: 'ros', label: 'Review of Systems', rows: 4, placeholder: 'Systemic review...' },
+      { key: 'physical_exam', label: 'Physical Examination', rows: 4, placeholder: 'Physical exam findings...' },
+      { key: 'assessment_plan', label: 'Assessment & Plan', rows: 4, placeholder: 'Differential diagnosis and plan...' },
+    ]
   },
+  'Orthopaedic Surgery Consult': {
+    id: 'ortho_consult',
+    label: 'Orthopaedic Surgery Consult',
+    icon: '',
+    sections: [
+      { key: 'chief_complaint', label: 'Chief Complaint (Joint/Limb)', rows: 2, placeholder: 'Affected limb/joint pain...' },
+      { key: 'history', label: 'Mechanism of Injury / History', rows: 4, placeholder: 'Onset, injury mechanism...' },
+      { key: 'examination', label: 'Orthopaedic Examination', rows: 4, placeholder: 'Inspection, tenderness, deformity...' },
+      { key: 'rom', label: 'Range of Motion / Special Tests', rows: 3, placeholder: 'ROM, stability, special tests...' },
+      { key: 'imaging', label: 'Imaging Findings', rows: 3, placeholder: 'X-rays, MRI, CT reports...' },
+      { key: 'diagnosis', label: 'Diagnosis & Plan', rows: 3, placeholder: 'Diagnosis and surgical/conservative plan...' },
+    ]
+  },
+  'Progress Note': {
+    id: 'progress_note',
+    label: 'Progress Note',
+    icon: '',
+    sections: [
+      { key: 'subjective', label: 'Subjective (Patient Update)', rows: 3, placeholder: 'Patient concerns, pain scores, subjective progress...' },
+      { key: 'objective', label: 'Objective (Vitals & Exam)', rows: 3, placeholder: 'Temp, BP, HR, exam updates...' },
+      { key: 'assessment', label: 'Assessment (Progress)', rows: 2, placeholder: 'Is patient improving or stable...' },
+      { key: 'plan', label: 'Plan / Updates', rows: 3, placeholder: 'Continued orders or updates...' },
+    ]
+  }
 };
 
 /**
  * Get the best matching template for a doctor's specialization.
- * Falls back to General Practice if no match.
+ * Falls back to Consult Note if no match.
  */
 export function getTemplateForSpecialization(specialization) {
-  if (!specialization) return NOTE_TEMPLATES['General Practice'];
-  return NOTE_TEMPLATES[specialization] || NOTE_TEMPLATES['General Practice'];
+  if (!specialization) return NOTE_TEMPLATES['SOAP'];
+  return NOTE_TEMPLATES[specialization] || NOTE_TEMPLATES['SOAP'];
 }
 
 /**

@@ -281,7 +281,7 @@ export function Vitals({ sessionId, onVitalsSaved }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 bg-[#22252a] hover:bg-[#1a1c20] text-white font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer shadow-md border-none"
+          className="w-full py-3.5 bg-[#8B5E3C] hover:bg-[#6e482d] text-white font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer shadow-md border-none"
         >
           {loading ? 'Saving Vitals...' : 'Save & Attach Vitals ✦'}
         </button>

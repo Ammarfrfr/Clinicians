@@ -1,11 +1,182 @@
-import { useState, useEffect } from 'react';
-import { Calendar } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Calendar, CheckCircle2, Clock, AlertCircle, Plus, Trash2, Send } from 'lucide-react';
 import { apiClient } from '../config.js';
 import { shareOnWhatsApp, normalizePhone } from '../utils/whatsappHelper.js';
 
-export function ReminderDashboard({ patients, doctor }) {
+const NOTE_COLORS = [
+  { name: 'Warm Cream', bg: '#F3E4C9', border: '#8B5E3C' },
+  { name: 'Sage Green', bg: '#D3D4C0', border: '#6e482d' },
+  { name: 'Soft Blue', bg: '#e2edfd', border: '#0A2947' },
+  { name: 'Rose', bg: '#fce4ec', border: '#e91e63' },
+  { name: 'Amber', bg: '#fff3e0', border: '#ff9800' },
+];
+
+export function ReminderDashboard({ patients = [], doctor }) {
+  // Tab state: 'notes', 'tasks', 'followups'
+  const [activeTab, setActiveTab] = useState('tasks');
+
+  // ─── Keep-style Notes state ───
+  const [stickyNotes, setStickyNotes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('scribologist_keep_notes');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [newNoteText, setNewNoteText] = useState('');
+  const [newNoteColor, setNewNoteColor] = useState(0);
+
+  useEffect(() => {
+    localStorage.setItem('scribologist_keep_notes', JSON.stringify(stickyNotes));
+  }, [stickyNotes]);
+
+  const addStickyNote = (text, colorIdx) => {
+    if (!text.trim()) return;
+    setStickyNotes(prev => [{
+      id: Date.now(),
+      text: text.trim(),
+      color: colorIdx ?? newNoteColor,
+      createdAt: new Date().toISOString(),
+    }, ...prev]);
+    setNewNoteText('');
+  };
+
+  const deleteStickyNote = (id) => {
+    setStickyNotes(prev => prev.filter(n => n.id !== id));
+  };
+
+  // ─── TODO state ───
+  const [todos, setTodos] = useState(() => {
+    try {
+      const saved = localStorage.getItem('scribologist_keep_todos');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [newTodoText, setNewTodoText] = useState('');
+  const [newTodoPriority, setNewTodoPriority] = useState('medium'); // 'high' | 'medium' | 'low'
+  const [newTodoPatientId, setNewTodoPatientId] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('scribologist_keep_todos', JSON.stringify(todos));
+  }, [todos]);
+
+  const addTodo = (text) => {
+    if (!text.trim()) return;
+    setTodos(prev => [...prev, {
+      id: Date.now(),
+      text: text.trim(),
+      done: false,
+      priority: newTodoPriority,
+      patientId: newTodoPatientId || null,
+      createdAt: new Date().toISOString(),
+    }]);
+    setNewTodoText('');
+    setNewTodoPatientId('');
+  };
+
+  const toggleTodo = (id) => {
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  };
+
+  const deleteTodo = (id) => {
+    setTodos(prev => prev.filter(t => t.id !== id));
+  };
+
+  // ─── Voice Dictation for Tasks/Notes ───
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const streamRef = useRef(null);
+
+  const startVoiceDictation = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await processVoiceRecording(blob);
+      };
+
+      mediaRecorder.start(250);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Mic access denied:', err);
+      alert('Microphone permission is required for voice dictation.');
+    }
+  };
+
+  const stopVoiceDictation = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const processVoiceRecording = async (blob) => {
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'voice_note.webm');
+
+      const response = await apiClient.post('/api/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const transcript = response.data?.data?.transcript || response.data?.transcript || '';
+      if (!transcript.trim()) {
+        setIsTranscribing(false);
+        return;
+      }
+
+      parseVoiceTranscript(transcript);
+    } catch (err) {
+      console.error('Voice transcription failed:', err);
+      addStickyNote('(Voice dictation failed)', 0);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const parseVoiceTranscript = (text) => {
+    const lines = text.split(/[.!?\n]+/).map(l => l.trim()).filter(Boolean);
+    let noteText = [];
+
+    for (const line of lines) {
+      const lower = line.toLowerCase();
+      if (
+        lower.startsWith('todo') ||
+        lower.startsWith('to do') ||
+        lower.startsWith('task') ||
+        lower.startsWith('remind') ||
+        lower.startsWith('remember') ||
+        lower.startsWith('checklist') ||
+        lower.includes('add task') ||
+        lower.includes('need to')
+      ) {
+        const cleaned = line.replace(/^(todo|to do|task|remind|remember|checklist|add task|need to)[:\s-]*/i, '').trim();
+        addTodo(cleaned || line);
+      } else {
+        noteText.push(line);
+      }
+    }
+
+    if (noteText.length > 0) {
+      addStickyNote(noteText.join('. '), 0);
+    }
+  };
+
+  // ─── Follow-up Reminders ───
   const [reminders, setReminders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [reminderLoading, setReminderLoading] = useState(false);
   const [sendingReminderId, setSendingReminderId] = useState(null);
 
   useEffect(() => {
@@ -14,7 +185,7 @@ export function ReminderDashboard({ patients, doctor }) {
 
   const fetchUpcomingReminders = async () => {
     try {
-      setLoading(true);
+      setReminderLoading(true);
       const response = await apiClient.get('/api/recordings/followups');
       if (response.data.success && response.data.data) {
         setReminders(response.data.data);
@@ -22,7 +193,7 @@ export function ReminderDashboard({ patients, doctor }) {
     } catch (err) {
       console.error('Error fetching followups:', err);
     } finally {
-      setLoading(false);
+      setReminderLoading(false);
     }
   };
 
@@ -66,86 +237,305 @@ export function ReminderDashboard({ patients, doctor }) {
     try {
       const response = await apiClient.post('/api/whatsapp/send', { to: phone, message: msg });
       if (response.data.success) {
-        alert('✅ WhatsApp reminder sent via Twilio!');
+        alert('✅ WhatsApp reminder sent!');
       } else {
         throw new Error(response.data.error || 'Failed to send');
       }
     } catch (err) {
-      console.warn('Twilio send failed, falling back to Web WhatsApp share:', err.message);
       shareOnWhatsApp(phone, msg);
     } finally {
       setSendingReminderId(null);
     }
   };
 
+  const completedTodos = todos.filter(t => t.done);
+  const activeTodos = todos.filter(t => !t.done);
+
   return (
-    <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col gap-5 text-left select-none">
-      <div className="border-b border-slate-100 pb-3 flex flex-col gap-1">
-        <h3
-          className="text-2xl font-normal text-[#22252a] tracking-tight mb-1"
-          style={{ fontFamily: "'Kalice', 'Kalice-Trial', 'Kalice-Regular', 'Instrument Serif', Georgia, serif" }}
-        >
-          Follow-Up & Rehab Dispatch
-        </h3>
-        <p className="text-xs text-slate-500 font-sans">Dispatch WhatsApp reminders and rehab exercises scheduled for the next 7 days.</p>
+    <div className="flex flex-col h-full w-full bg-[#F3E4C9] font-sans select-none overflow-y-auto p-6 text-left">
+      {/* Header Banner */}
+      <div className="bg-white border border-[#D3D4C0] rounded-3xl p-6 shadow-xs mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0A2947] tracking-tight font-serif" style={{ fontFamily: "'Kalice', serif" }}>
+            Command Center & Tasks
+          </h1>
+          <p className="text-xs text-[#0A2947]/70 font-sans mt-0.5">
+            Manage your daily tasks, clinic notes, and patient follow-up dispatches.
+          </p>
+        </div>
+
+        {/* Action Controls & Voice Dictate */}
+        <div className="flex items-center gap-2">
+          {isTranscribing && (
+            <span className="text-[10px] font-mono text-[#8B5E3C] animate-pulse font-bold">Transcribing...</span>
+          )}
+          <button
+            onClick={isRecording ? stopVoiceDictation : startVoiceDictation}
+            disabled={isTranscribing}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border-none cursor-pointer transition-all ${
+              isRecording
+                ? 'bg-rose-600 text-white animate-pulse'
+                : 'bg-[#8B5E3C] text-white hover:bg-[#6e482d]'
+            } disabled:opacity-40 shadow-xs`}
+            title={isRecording ? 'Stop dictation' : 'Dictate tasks & notes'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {isRecording ? <rect x="4" y="4" width="16" height="16" rx="2" /> : <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zM19 10v1a7 7 0 0 1-14 0v-1M12 19v4M8 23h8" />}
+            </svg>
+            {isRecording ? 'Stop Dictation' : 'Voice Dictate'}
+          </button>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center gap-3 text-gray-500 py-8 text-center text-sm font-medium">
-          <span className="animate-spin border-2 border-teal border-t-transparent rounded-full w-6 h-6"></span>
-          Loading reminders...
-        </div>
-      ) : reminders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 text-gray-400 py-8 text-center text-sm font-medium border border-dashed border-gray-200 rounded-xl">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" />
-          </svg>
-          <p>No follow-up appointments scheduled for the next 7 days.</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3 mt-2">
-          {reminders.map((reminder) => {
-            const patientPhone = getPatientPhone(reminder.patientId);
-            const formattedDate = new Date(reminder.scheduledFollowUp).toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            });
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-[#D3D4C0] pb-2 mb-6">
+        {[
+          { id: 'tasks', label: 'Tasks & Checklist', count: activeTodos.length },
+          { id: 'notes', label: 'Sticky Notes', count: stickyNotes.length },
+          { id: 'followups', label: 'Follow-Up Dispatches', count: reminders.length },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border ${
+              activeTab === tab.id
+                ? 'bg-[#0A2947] text-white border-[#0A2947] shadow-xs'
+                : 'bg-white text-[#0A2947] border-[#D3D4C0] hover:bg-[#F3E4C9]/50'
+            }`}
+          >
+            {tab.label} {tab.count > 0 && <span className="ml-1 opacity-75 font-mono">({tab.count})</span>}
+          </button>
+        ))}
+      </div>
 
-            return (
-              <div key={reminder._id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100/50 hover:border-teal/30 transition-all gap-4">
-                <div className="flex flex-col gap-1 text-left flex-1">
-                  <div className="text-sm font-semibold text-navy">{getPatientName(reminder.patientId)}</div>
-                  <div className="text-xs text-gray-500">Scheduled: <strong>{formattedDate}</strong></div>
-                  {reminder.clinicalNote?.followup && (
-                    <div className="text-xs text-gray-600 mt-1">
-                      <span className="font-bold text-gray-500">Advice:</span> {reminder.clinicalNote.followup}
-                    </div>
-                  )}
-                </div>
-                <div className="shrink-0">
-                  {patientPhone ? (
-                    <button
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-semibold rounded-lg transition-colors border-none cursor-pointer shadow-xs disabled:opacity-55 disabled:cursor-not-allowed"
-                      onClick={() => handleSendReminder(reminder)}
-                      disabled={sendingReminderId === reminder._id}
+      {/* ─── TAB 1: Tasks & Checklist ─── */}
+      {activeTab === 'tasks' && (
+        <div className="flex flex-col gap-6">
+          {/* Add Task Card */}
+          <div className="bg-white border border-[#D3D4C0] rounded-2xl p-4 shadow-xs flex flex-col gap-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-[#0A2947]/70 font-mono">Add New Task</div>
+            <div className="flex flex-col md:flex-row gap-2">
+              <input
+                className="flex-1 px-3 py-2 bg-[#F9F6F1] border border-[#D3D4C0] rounded-xl text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#8B5E3C] font-sans"
+                placeholder="Task description (e.g., Call lab for Mr. Sharma's MRI)..."
+                value={newTodoText}
+                onChange={(e) => setNewTodoText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTodo(newTodoText);
+                  }
+                }}
+              />
+              
+              {/* Priority Select */}
+              <select
+                value={newTodoPriority}
+                onChange={(e) => setNewTodoPriority(e.target.value)}
+                className="px-2.5 py-2 bg-[#F9F6F1] border border-[#D3D4C0] rounded-xl text-xs font-bold text-[#0A2947] focus:outline-none"
+              >
+                <option value="high">High Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="low">Low Priority</option>
+              </select>
+
+              {/* Patient Link Select */}
+              <select
+                value={newTodoPatientId}
+                onChange={(e) => setNewTodoPatientId(e.target.value)}
+                className="px-2.5 py-2 bg-[#F9F6F1] border border-[#D3D4C0] rounded-xl text-xs text-[#0A2947] focus:outline-none max-w-[180px]"
+              >
+                <option value="">No Linked Patient</option>
+                {patients.map((p) => (
+                  <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>
+                ))}
+              </select>
+
+              <button
+                onClick={() => addTodo(newTodoText)}
+                className="px-4 py-2 bg-[#8B5E3C] hover:bg-[#6e482d] text-white text-xs font-bold rounded-xl border-none cursor-pointer transition-colors shadow-xs shrink-0"
+              >
+                + Add Task
+              </button>
+            </div>
+          </div>
+
+          {/* Active Tasks */}
+          <div className="bg-white border border-[#D3D4C0] rounded-2xl p-5 shadow-xs flex flex-col gap-3">
+            <div className="flex justify-between items-center border-b border-[#D3D4C0]/40 pb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0A2947] font-mono">Pending Tasks ({activeTodos.length})</span>
+            </div>
+
+            {activeTodos.length === 0 ? (
+              <p className="text-xs text-[#0A2947]/50 italic py-4 text-center">No pending tasks! Add one above or dictate via voice.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {activeTodos.map((todo) => {
+                  const linkedPatient = patients.find((p) => p._id === todo.patientId);
+                  return (
+                    <div
+                      key={todo.id}
+                      className="flex items-center justify-between p-3 bg-[#F9F6F1] border border-[#D3D4C0]/70 rounded-xl hover:border-[#8B5E3C]/40 transition-all group"
                     >
-                      {sendingReminderId === reminder._id ? (
-                        <span className="animate-spin border border-white border-t-transparent rounded-full w-3 h-3"></span>
-                      ) : (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12.031 2C6.446 2 1.92 6.509 1.916 12.067c-.002 1.777.466 3.511 1.355 5.038L2 22l5.068-1.32c1.478.801 3.136 1.222 4.829 1.229h.004c5.584 0 10.113-4.509 10.117-10.07A10.007 10.007 0 0 0 12.031 2zm5.726 13.882c-.314.876-1.572 1.606-2.177 1.706-.554.092-1.282.164-3.79-.824-3.21-1.264-5.263-4.526-5.424-4.739-.161-.212-1.3-1.722-1.3-3.284 0-1.562.822-2.327 1.118-2.628.298-.3.65-.375.867-.375h.619c.198 0 .463-.075.725.556.262.631.897 2.18.974 2.332.078.152.13.328.026.531-.102.203-.153.328-.306.506-.153.178-.323.398-.461.534-.153.152-.314.318-.135.62.18.3.8 1.309 1.714 2.115 1.173 1.039 2.16 1.361 2.463 1.512.302.152.48.127.66-.076.18-.203.774-.897.98-1.201.206-.304.412-.253.695-.152.284.101 1.796.837 2.106.988.31.152.516.228.593.354.077.127.077.734-.237 1.61z"/>
-                        </svg>
-                      )}
-                      {sendingReminderId === reminder._id ? 'Sending...' : 'Remind WhatsApp'}
-                    </button>
-                  ) : (
-                    <span className="text-xs text-gray-400 font-medium italic">No Phone</span>
-                  )}
-                </div>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={todo.done}
+                          onChange={() => toggleTodo(todo.id)}
+                          className="w-4 h-4 rounded cursor-pointer accent-[#8B5E3C]"
+                        />
+                        <span className="text-xs font-semibold text-[#0A2947] font-sans truncate">{todo.text}</span>
+                        
+                        {linkedPatient && (
+                          <span className="text-[10px] font-bold text-[#8B5E3C] bg-[#F3E4C9] px-2 py-0.5 rounded-md font-mono shrink-0">
+                            👤 {linkedPatient.firstName} {linkedPatient.lastName}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full font-mono ${
+                          todo.priority === 'high' ? 'bg-rose-100 text-rose-700' :
+                          todo.priority === 'low' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {todo.priority || 'medium'}
+                        </span>
+                        <button
+                          onClick={() => deleteTodo(todo.id)}
+                          className="p-1 text-slate-400 hover:text-rose-600 border-none bg-transparent cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            )}
+          </div>
+
+          {/* Completed Tasks */}
+          {completedTodos.length > 0 && (
+            <div className="bg-white/60 border border-[#D3D4C0] rounded-2xl p-5 shadow-xs flex flex-col gap-2">
+              <div className="text-xs font-bold uppercase tracking-wider text-[#0A2947]/50 font-mono mb-1">
+                Completed ({completedTodos.length})
+              </div>
+              {completedTodos.map((todo) => (
+                <div key={todo.id} className="flex items-center justify-between p-2.5 bg-white/40 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={true} onChange={() => toggleTodo(todo.id)} className="w-4 h-4 cursor-pointer accent-[#8B5E3C]" />
+                    <span className="text-xs text-[#0A2947]/50 line-through font-sans">{todo.text}</span>
+                  </div>
+                  <button onClick={() => deleteTodo(todo.id)} className="text-slate-400 hover:text-rose-600 border-none bg-transparent cursor-pointer text-xs">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── TAB 2: Sticky Notes ─── */}
+      {activeTab === 'notes' && (
+        <div className="flex flex-col gap-6">
+          <div className="bg-white border border-[#D3D4C0] rounded-2xl p-4 shadow-xs flex flex-col gap-3">
+            <textarea
+              className="w-full px-3 py-2.5 bg-[#F9F6F1] border border-[#D3D4C0] rounded-xl text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#8B5E3C] resize-none font-sans"
+              placeholder="Take a quick clinic note..."
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              rows={2}
+            />
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-1.5">
+                {NOTE_COLORS.map((c, idx) => (
+                  <button
+                    key={c.name}
+                    onClick={() => setNewNoteColor(idx)}
+                    className={`w-5 h-5 rounded-full border-2 cursor-pointer transition-transform ${
+                      newNoteColor === idx ? 'scale-125 border-[#0A2947]' : 'border-transparent'
+                    }`}
+                    style={{ backgroundColor: c.bg }}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => addStickyNote(newNoteText, newNoteColor)}
+                className="px-4 py-1.5 bg-[#8B5E3C] text-white text-xs font-bold rounded-xl border-none cursor-pointer hover:bg-[#6e482d]"
+              >
+                + Save Note
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stickyNotes.map((note) => {
+              const color = NOTE_COLORS[note.color] || NOTE_COLORS[0];
+              return (
+                <div
+                  key={note.id}
+                  className="rounded-2xl p-4 shadow-xs relative group border"
+                  style={{ backgroundColor: color.bg, borderColor: color.border }}
+                >
+                  <button
+                    onClick={() => deleteStickyNote(note.id)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-slate-500 hover:text-rose-600 w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer text-xs"
+                  >
+                    ✕
+                  </button>
+                  <p className="text-xs text-[#0A2947] leading-relaxed whitespace-pre-wrap font-sans">{note.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 3: Follow-Up Dispatches ─── */}
+      {activeTab === 'followups' && (
+        <div className="bg-white border border-[#D3D4C0] rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+          <div className="border-b border-[#D3D4C0]/40 pb-3">
+            <h3 className="text-lg font-bold text-[#0A2947] font-serif" style={{ fontFamily: "'Kalice', serif" }}>
+              Upcoming Follow-Up Dispatches
+            </h3>
+            <p className="text-xs text-[#0A2947]/70 font-sans">Automated WhatsApp dispatch for scheduled follow-ups and care plans.</p>
+          </div>
+
+          {reminderLoading ? (
+            <p className="text-xs text-[#0A2947]/60 italic py-4">Loading scheduled reminders...</p>
+          ) : reminders.length === 0 ? (
+            <p className="text-xs text-[#0A2947]/60 italic py-6 text-center">No upcoming follow-ups found for the next 7 days.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {reminders.map((reminder) => {
+                const patientPhone = getPatientPhone(reminder.patientId);
+                const formattedDate = new Date(reminder.scheduledFollowUp).toLocaleDateString('en-IN', {
+                  day: 'numeric', month: 'short', year: 'numeric'
+                });
+
+                return (
+                  <div key={reminder._id} className="flex items-center justify-between p-4 bg-[#F9F6F1] border border-[#D3D4C0] rounded-xl">
+                    <div>
+                      <div className="text-sm font-bold text-[#0A2947]">{getPatientName(reminder.patientId)}</div>
+                      <div className="text-xs text-[#0A2947]/70">Date: <strong>{formattedDate}</strong></div>
+                    </div>
+                    {patientPhone ? (
+                      <button
+                        onClick={() => handleSendReminder(reminder)}
+                        disabled={sendingReminderId === reminder._id}
+                        className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-lg border-none cursor-pointer flex items-center gap-1"
+                      >
+                        <Send width="12" height="12" />
+                        Remind WhatsApp
+                      </button>
+                    ) : (
+                      <span className="text-xs text-[#0A2947]/40 font-mono">No Phone</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,10 +1,10 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { asyncHandler } from '../utils/asyncHandler.js';
-import { ApiError } from '../utils/ApiError.js';
-import { ApiResponse } from '../utils/ApiResponse.js';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
+import { asyncHandler } from '../Utils/asyncHandler.js';
+import { ApiError } from '../Utils/ApiError.js';
+import { ApiResponse } from '../Utils/ApiResponse.js';
+import { uploadToCloudinary } from '../Utils/cloudinary.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

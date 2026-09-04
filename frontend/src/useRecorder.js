@@ -5,6 +5,7 @@ import { saveRecordingOffline } from './utils/offlineQueue';
 
 export function useRecorder(patientId = null, options = {}) {
   const [recording, setRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [liveTranscript, setLiveTranscript] = useState('');
@@ -97,9 +98,9 @@ export function useRecorder(patientId = null, options = {}) {
       }
     };
 
-    // Auto-restart on end if still recording
+    // Auto-restart on end if still recording and not paused
     recognition.onend = () => {
-      if (recognitionRef.current && recording) {
+      if (recognitionRef.current && recording && !isPaused) {
         try { recognition.start(); } catch (_) {}
       }
     };
@@ -117,7 +118,9 @@ export function useRecorder(patientId = null, options = {}) {
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
@@ -132,6 +135,7 @@ export function useRecorder(patientId = null, options = {}) {
 
       mediaRecorder.start();
       setRecording(true);
+      setIsPaused(false);
       setTimer(0);
       setTranscript('');
       setLiveTranscript('');
@@ -157,6 +161,64 @@ export function useRecorder(patientId = null, options = {}) {
     }
   };
 
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try { mediaRecorderRef.current.pause(); } catch (e) {}
+    }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (_) {}
+    }
+    setIsPaused(true);
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      try { mediaRecorderRef.current.resume(); } catch (e) {}
+    }
+    if (!timerIntervalRef.current) {
+      timerIntervalRef.current = setInterval(() => {
+        setTimer((t) => t + 1);
+      }, 1000);
+    }
+    const recognition = setupLiveTranscription();
+    if (recognition) {
+      recognitionRef.current = recognition;
+      try { recognition.start(); } catch (_) {}
+    }
+    setIsPaused(false);
+  };
+
+  const cancelRecording = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (_) {}
+      recognitionRef.current = null;
+    }
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.onstop = null; // Prevent sending audio to backend
+      if (mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch (_) {}
+      }
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    audioChunksRef.current = [];
+    lastAudioBlobRef.current = null;
+    setRecording(false);
+    setIsPaused(false);
+    setTimer(0);
+    setLiveTranscript('');
+  };
+
   const stopRecording = () => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
@@ -179,6 +241,7 @@ export function useRecorder(patientId = null, options = {}) {
     }
 
     setRecording(false);
+    setIsPaused(false);
     setLoading(true);
     setProcessingStep(1);
   };
@@ -201,9 +264,15 @@ export function useRecorder(patientId = null, options = {}) {
       formData.append('audio', audioBlob, 'recording.webm');
       if (patientId) formData.append('patientId', patientId);
 
-      // Append template sections if present in options
+      // Append template sections & templateId if present in options
+      if (optionsRef.current.templateId) {
+        formData.append('templateId', optionsRef.current.templateId);
+      }
       if (optionsRef.current.templateSections) {
         formData.append('templateSections', JSON.stringify(optionsRef.current.templateSections));
+      }
+      if (optionsRef.current.typedContext) {
+        formData.append('typedContext', optionsRef.current.typedContext);
       }
 
       const response = await apiClient.post('/api/analyze', formData, {
@@ -284,7 +353,13 @@ export function useRecorder(patientId = null, options = {}) {
           const latestSession = data.data[0];
           // Only load/populate if this session has NOT been finalized (saved) yet!
           if (!latestSession.isFinalized) {
-            setNote(latestSession.note || null);
+            const rawNoteStr = JSON.stringify(latestSession.note || {});
+            const isDummyText = rawNoteStr.includes('Patient presented for') || rawNoteStr.includes('systemic examination pending');
+            if (isDummyText) {
+              setNote({ subjective: '', objective: '', assessment: '', plan: '', prescription: [], followup: '' });
+            } else {
+              setNote(latestSession.note || null);
+            }
             setTranscript(latestSession.labeledTranscript || latestSession.plainTranscript || '');
             setRecordingId(latestSession._id || null);
           }
@@ -333,9 +408,51 @@ export function useRecorder(patientId = null, options = {}) {
     startRecording();
   };
 
+  const generateNoteFromContext = async (overrideTemplateId, overrideSections) => {
+    const tId = overrideTemplateId || optionsRef.current.templateId || 'soap';
+    const tSections = overrideSections || optionsRef.current.templateSections;
+    const rawTypedContext = optionsRef.current.typedContext || '';
+    const currentTranscript = (transcript || liveTranscript || '').trim();
+    const cleanTypedContext = rawTypedContext.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim();
+
+    const combinedText = (cleanTypedContext + ' ' + currentTranscript).trim();
+    if (!combinedText) {
+      console.warn('No context or transcript available to generate note.');
+      return;
+    }
+
+    setLoading(true);
+    setNoteError(null);
+    try {
+      const response = await apiClient.post('/api/analyze/text', {
+        transcript: currentTranscript,
+        typedContext: cleanTypedContext,
+        patientId,
+        templateId: tId,
+        templateSections: tSections,
+      });
+
+      const data = response.data;
+      if (data.success && data.data) {
+        setNote(data.data.note);
+        setNoteError(data.data.noteError || null);
+        if (data.data.recordingId) setRecordingId(data.data.recordingId);
+      } else {
+        setNoteError(data.message || 'Failed to generate note from context.');
+      }
+    } catch (err) {
+      console.error('Error generating note from context:', err);
+      setNoteError(err.response?.data?.error || err.message || 'Failed to generate note.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     recording,
+    isPaused,
     loading,
+    setLoading,
     transcript: transcript || liveTranscript,
     liveTranscript,
     note,
@@ -348,8 +465,12 @@ export function useRecorder(patientId = null, options = {}) {
     setRecordingId,
     start: startRecording,
     stop: stopRecording,
+    pause: pauseRecording,
+    resume: resumeRecording,
+    cancel: cancelRecording,
     retry,
     reRecord,
+    generateNoteFromContext,
     retryAvailable,
     transcriptionError,
     offlineSaved,

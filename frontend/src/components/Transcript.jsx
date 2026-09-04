@@ -29,10 +29,10 @@ export function Transcript({ transcript, recording }) {
   const lines = parseTranscript(transcript);
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex-1 flex flex-col overflow-hidden text-left select-none shadow-xs">
-      <div className="flex justify-between items-center mb-4 shrink-0 border-b border-slate-100 pb-3">
-        <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
-          Live Audio Transcript
+    <div className="bg-white border border-[#D3D4C0] rounded-2xl p-6 flex-1 flex flex-col overflow-hidden text-left select-none shadow-xs">
+      <div className="flex justify-between items-center mb-4 shrink-0 border-b border-[#D3D4C0]/40 pb-3">
+        <span className="text-sm font-bold font-187 text-[#0A2947] tracking-tight">
+          Live Consultation Transcript
         </span>
         {recording && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 font-mono text-[10px] font-bold">
@@ -42,24 +42,24 @@ export function Transcript({ transcript, recording }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto text-xs leading-relaxed text-slate-700 flex flex-col gap-3 font-sans">
+      <div className="flex-1 overflow-y-auto text-xs leading-relaxed text-[#0A2947] flex flex-col gap-3 font-sans">
         {!transcript && recording && (
-          <div className="text-slate-400 italic text-xs py-4">
+          <div className="text-[#0A2947]/50 italic text-xs py-4">
             Listening to doctor-patient conversation... speak ambiently to begin.
           </div>
         )}
 
         {lines.map((line) => (
-          <div key={line.id} className="flex flex-col gap-0.5">
+          <div key={line.id} className="flex flex-col gap-0.5 p-2 rounded-xl bg-[#F3E4C9]/40 border border-[#D3D4C0]/60">
             {line.speaker ? (
               <div>
-                <span className={`font-bold text-xs uppercase tracking-wider block mb-0.5 ${line.speaker === 'Doctor' ? 'text-[#22252a]' : 'text-slate-500'}`}>
+                <span className={`font-bold text-xs uppercase tracking-wider block mb-0.5 ${line.speaker === 'Doctor' ? 'text-[#8B5E3C]' : 'text-[#0A2947]'}`}>
                   {line.speaker}
                 </span>
-                <span className="text-slate-800 text-xs leading-relaxed">{line.text}</span>
+                <span className="text-[#0A2947] text-xs leading-relaxed">{line.text}</span>
               </div>
             ) : (
-              <span className="text-slate-800 text-xs leading-relaxed">{line.text}</span>
+              <span className="text-[#0A2947] text-xs leading-relaxed">{line.text}</span>
             )}
           </div>
         ))}

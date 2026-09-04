@@ -44,19 +44,17 @@ export function generatePrescriptionMessage(patient, doctor, note) {
     : [];
     
   if (rxArray.length > 0) {
-    msg += `*💊 Prescriptions:*\n`;
-    rxArray.forEach((med) => {
-      const drug = med.drug || 'Medication';
-      const dose = med.dose ? ` (${med.dose})` : '';
-      const freq = med.frequency ? ` - ${med.frequency}` : '';
-      msg += `• ${drug}${dose}${freq}\n`;
+    msg += `*Prescriptions:*\n`;
+    note.prescription.forEach((med, idx) => {
+      const name = typeof med === 'object' ? med.drug : med;
+      const dose = typeof med === 'object' ? `${med.dose || ''} ${med.frequency || ''}` : '';
+      msg += `${idx + 1}. ${name} ${dose ? `(${dose.trim()})` : ''}\n`;
     });
     msg += `\n`;
   }
-  
-  if (note?.followup) {
-    msg += `*📅 Follow-up Advice:*\n`;
-    msg += `${note.followup}\n\n`;
+
+  if (note.followup) {
+    msg += `*Follow-up Advice:*\n${note.followup}\n\n`;
   }
   
   msg += `*Please note:* This is an AI-assisted documentation summary. Check your physical prescription copy for final instructions.`;

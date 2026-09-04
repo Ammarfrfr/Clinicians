@@ -2,7 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { searchDrugs } from '../utils/drugSearch.js';
 import { apiClient } from '../config.js';
 
-export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (CDSCO)...', onBlur, hideIcon = false }) {
+export function DrugSearchInput({
+  value = '',
+  onChange,
+  onSelectDrug,
+  placeholder = 'Search drug or brand (e.g. Cosvate GM, Cipla, Dolo)...',
+  onBlur,
+  hideIcon = false
+}) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -33,7 +40,7 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
   const handleInputChange = (e) => {
     const val = e.target.value;
     setQuery(val);
-    onChange(val);
+    if (onChange) onChange(val);
     setActiveIndex(-1);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -58,7 +65,7 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
                 serverMatches.forEach((srvDrug) => {
                   const isDuplicate = combined.some((locDrug) => {
                     const nameMatch = locDrug.name.toLowerCase() === srvDrug.name.toLowerCase();
-                    const compMatch = locDrug.composition.toLowerCase() === srvDrug.composition.toLowerCase();
+                    const compMatch = (locDrug.composition || '').toLowerCase() === (srvDrug.composition || '').toLowerCase();
                     const brandMatch = (locDrug.brand || '').toLowerCase() === (srvDrug.brand || '').toLowerCase();
                     return nameMatch || (compMatch && brandMatch);
                   });
@@ -92,15 +99,44 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
   };
 
   const handleSelect = (drug) => {
-    setQuery(drug.name);
-    onChange(drug.name);
+    let drugNameStr = '';
+    if (typeof drug === 'object' && drug !== null) {
+      if (drug.brand && !drug.name.toLowerCase().includes(drug.brand.toLowerCase())) {
+        drugNameStr = `${drug.name} (${drug.brand})`;
+      } else {
+        drugNameStr = drug.name;
+      }
+    } else {
+      drugNameStr = String(drug || '');
+    }
+
+    if (!drugNameStr.trim()) return;
+
+    if (onSelectDrug) {
+      onSelectDrug(drugNameStr.trim());
+      setQuery('');
+      if (onChange) onChange('');
+    } else {
+      setQuery(drugNameStr);
+      if (onChange) onChange(drugNameStr);
+    }
+
     setShowDropdown(false);
     setActiveIndex(-1);
-    // Explicitly trigger onBlur logic since dropdown selection doesn't naturally trigger input blur
     if (onBlur) onBlur();
   };
 
   const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (showDropdown && activeIndex >= 0 && results[activeIndex]) {
+        handleSelect(results[activeIndex]);
+      } else if (query.trim()) {
+        handleSelect({ name: query.trim() });
+      }
+      return;
+    }
+
     if (!showDropdown) return;
 
     if (e.key === 'ArrowDown') {
@@ -109,9 +145,6 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex((prev) => Math.max(prev - 1, 0));
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      handleSelect(results[activeIndex]);
     } else if (e.key === 'Escape') {
       setShowDropdown(false);
     }
@@ -135,30 +168,43 @@ export function DrugSearchInput({ value, onChange, placeholder = 'Search drug (C
           placeholder={placeholder}
           className="w-full text-xs border-none bg-transparent focus:outline-none placeholder:text-gray-400 p-0"
         />
+        {query.trim() && (
+          <button
+            type="button"
+            onClick={() => handleSelect({ name: query.trim() })}
+            className="px-2 py-0.5 bg-[#0A2947] hover:bg-[#163f66] text-white text-[11px] font-bold rounded-lg border-none cursor-pointer shrink-0 transition-colors"
+          >
+            + Add
+          </button>
+        )}
       </div>
 
       {(showDropdown || loading) && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto">
           {results.map((drug, idx) => (
             <div
               key={idx}
-              className={`p-3 hover:bg-teal-light/20 cursor-pointer border-b border-gray-50 last:border-b-0 text-left ${idx === activeIndex ? 'bg-teal-light/35' : ''}`}
+              className={`p-3 hover:bg-teal-light/20 cursor-pointer border-b border-gray-50 last:border-b-0 text-left transition-colors ${idx === activeIndex ? 'bg-teal-light/35 font-semibold' : ''}`}
               onClick={() => handleSelect(drug)}
               onMouseEnter={() => setActiveIndex(idx)}
             >
-              <div className="text-sm font-semibold text-navy">{drug.name}</div>
-              <div className="text-xs text-gray-500 flex justify-between gap-2 mt-0.5">
-                <span className="truncate">{drug.composition}</span>
-                {drug.brand && <span className="font-medium text-teal-dark shrink-0">{drug.brand}</span>}
+              <div className="text-xs font-bold text-navy flex items-center justify-between">
+                <span>{drug.name}</span>
+                {drug.brand && <span className="font-semibold text-teal-dark text-[10px] bg-teal-light/30 px-1.5 py-0.5 rounded-md">{drug.brand}</span>}
               </div>
+              {drug.composition && (
+                <div className="text-[11px] text-gray-500 mt-0.5 truncate">
+                  {drug.composition}
+                </div>
+              )}
             </div>
           ))}
           {loading && (
-            <div className="p-3 text-center text-xs font-semibold text-teal-dark bg-teal-light/10 flex items-center justify-center gap-1.5">
+            <div className="p-2.5 text-center text-xs font-semibold text-teal-dark bg-teal-light/10 flex items-center justify-center gap-1.5">
               <svg className="animate-spin text-teal" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <circle cx="12" cy="12" r="10" strokeDasharray="16" />
               </svg>
-              Searching database...
+              Searching pharmaceutical database...
             </div>
           )}
         </div>
