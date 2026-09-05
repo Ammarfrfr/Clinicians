@@ -191,10 +191,11 @@ export const handleWebhookEvent = asyncHandler(async (req, res) => {
   res.status(200).send('EVENT_RECEIVED');
 
   const body = req.body;
-  if (body.object !== 'whatsapp_business_account') return;
+  if (!body) return;
 
-  const entry = body.entry?.[0];
-  const changes = entry?.changes?.[0]?.value;
+  // Extract changes payload (handles both live Meta webhook and Meta Test Modal format)
+  const changes = body.entry?.[0]?.changes?.[0]?.value || body.value || (body.field === 'messages' ? body.value : null);
+  if (!changes) return;
 
   // 1. Handle message status updates (delivered, read, failed)
   if (changes?.statuses?.length) {
