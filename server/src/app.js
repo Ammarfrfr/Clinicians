@@ -59,6 +59,9 @@ import whatsappRoute from './routes/whatsapp.routes.js';
 import adminRoute from './routes/admin.routes.js';
 import shareRoute from './routes/share.routes.js';
 import leadRoute from './routes/lead.routes.js';
+import appointmentRoute from './routes/appointment.routes.js';
+import scheduleRoute from './routes/schedule.routes.js';
+import escalationRoute from './routes/escalation.routes.js';
 
 // Routes use
 app.use('/api/auth', authRoute);
@@ -69,5 +72,8 @@ app.use('/api/whatsapp', whatsappRoute);
 app.use('/api/admin', adminRoute);
 app.use('/api/share', shareRoute);
 app.use('/api/leads', leadRoute);
+app.use('/api/appointments', appointmentRoute);
+app.use('/api/schedule', scheduleRoute);
+app.use('/api/escalation', escalationRoute);
 
 export default app;

@@ -47,7 +47,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ['doctor', 'admin'],
+      enum: ['doctor', 'admin', 'staff'],
       default: 'doctor',
     },
     onboardingComplete: {

@@ -16,6 +16,11 @@ const patientSchema = new Schema(
       phone: String,
       email: String,
     },
+    whatsappNumber: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
     medicalInfo: {
       medicalHistory: String,
       bloodGroup: String,

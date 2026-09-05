@@ -5,11 +5,13 @@ import { createServer } from 'http';
 import app from './src/app.js';
 import { connectDb } from './src/DB/db.connection.js';
 import { initReminderCron } from './src/Utils/reminderCron.js';
+import { initAppointmentReminderCron } from './src/Utils/appointmentReminderCron.js';
 
 connectDb()
   .then(() => {
     const server = createServer(app);
     initReminderCron();
+    initAppointmentReminderCron();
 
     // Global error handler
     app.use((err, req, res, next) => {

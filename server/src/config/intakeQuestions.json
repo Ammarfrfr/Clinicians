@@ -1,0 +1,95 @@
+{
+  "version": "1.0",
+  "specialty": "orthopedics",
+  "welcomeMessage": "Welcome to Dr. Consultations. To assist Dr. with your upcoming appointment, please answer a few quick questions (takes ~1 minute).",
+  "steps": [
+    {
+      "id": "visit_type",
+      "question": "Is this a new orthopedic issue or a follow-up for a previous visit?",
+      "type": "choice",
+      "options": ["New issue", "Follow-up visit"],
+      "branches": {
+        "New issue": "body_part",
+        "Follow-up visit": "followup_progress"
+      }
+    },
+    {
+      "id": "body_part",
+      "question": "Which body part is affected? (e.g. Right Knee, Lower Back, Left Shoulder, Ankle, Neck)",
+      "type": "text",
+      "next": "onset_type"
+    },
+    {
+      "id": "onset_type",
+      "question": "How did the pain or problem start?",
+      "type": "choice",
+      "options": ["Sudden injury / Fall", "Gradual onset (over time)"],
+      "next": "duration"
+    },
+    {
+      "id": "duration",
+      "question": "How long have you been experiencing this? (e.g. 3 days, 2 weeks, 6 months)",
+      "type": "text",
+      "next": "pain_level"
+    },
+    {
+      "id": "pain_level",
+      "question": "On a scale of 1 to 10, how severe is your pain currently?",
+      "type": "choice",
+      "options": ["1-3 (Mild)", "4-6 (Moderate)", "7-10 (Severe)"],
+      "next": "pain_triggers"
+    },
+    {
+      "id": "pain_triggers",
+      "question": "What movements or activities make the pain worse or better? (e.g. walking, resting, bending)",
+      "type": "text",
+      "next": "associated_symptoms"
+    },
+    {
+      "id": "associated_symptoms",
+      "question": "Are you experiencing any of these symptoms?",
+      "type": "choice",
+      "options": ["Swelling", "Stiffness / Lock", "Reduced range of motion", "Multiple symptoms", "None of these"],
+      "next": "prior_injury"
+    },
+    {
+      "id": "prior_injury",
+      "question": "Have you had any prior injury or surgery to this area?",
+      "type": "choice",
+      "options": ["Yes, prior injury/surgery", "No, none"],
+      "next": "medications_tried"
+    },
+    {
+      "id": "medications_tried",
+      "question": "What medications, pain relief, or home treatments have you already tried? (Type 'none' if none)",
+      "type": "text",
+      "next": "reports_upload"
+    },
+    {
+      "id": "reports_upload",
+      "question": "Do you have any recent X-ray, MRI, or prescription photos? Please take a photo and send it now, or type 'none'.",
+      "type": "photo",
+      "next": "mobility"
+    },
+    {
+      "id": "mobility",
+      "question": "Can you currently walk, climb stairs, or bear weight normally?",
+      "type": "choice",
+      "options": ["Yes, fully normal", "With difficulty / limp", "Cannot bear weight"],
+      "next": "appointment_prompt"
+    },
+    {
+      "id": "followup_progress",
+      "question": "How has your recovery been since your last visit? Any new concerns or improvements?",
+      "type": "text",
+      "next": "followup_reports",
+      "auto_prior_visit": true
+    },
+    {
+      "id": "followup_reports",
+      "question": "Do you have any new X-rays, scan reports, or medication lists to share? Send photo or type 'none'.",
+      "type": "photo",
+      "next": "appointment_prompt"
+    }
+  ]
+}

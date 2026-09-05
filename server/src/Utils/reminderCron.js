@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { Recording } from '../models/recording.model.js';
 import { Patient } from '../models/patient.model.js';
 import { User } from '../models/user.model.js';
-import { sendWhatsAppMessage } from './twilio.js';
+import { sendTextMessage } from './metaWhatsapp.js';
 
 /**
  * Parses and sends scheduled follow-up reminders.
@@ -66,8 +66,8 @@ export async function sendScheduledReminders() {
         msg += `------------------------------------\n`;
         msg += `Looking forward to seeing you. Please let us know if you need to reschedule.`;
 
-        // Send via Twilio
-        await sendWhatsAppMessage(patient.contactInfo.phone, msg);
+        // Send via Meta WhatsApp
+        await sendTextMessage(patient.whatsappNumber || patient.contactInfo.phone, msg);
 
         // Update recording state
         recording.followUpReminderSent = true;

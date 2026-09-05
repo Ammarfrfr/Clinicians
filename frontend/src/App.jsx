@@ -16,7 +16,9 @@ import { ReminderDashboard } from './components/ReminderDashboard';
 import { ChatHistoryDashboard } from './components/ChatHistoryDashboard';
 import { PatientFilesGrid } from './components/PatientFilesGrid';
 import { OnboardingModal } from './components/OnboardingModal';
-import { ChatAssistant } from './components/ChatAssistant';
+import { AppointmentQueue } from './components/AppointmentQueue';
+import { ScheduleEditor } from './components/ScheduleEditor';
+import { EscalationRulesEditor } from './components/EscalationRulesEditor';
 import { NOTE_TEMPLATES, getTemplateForSpecialization, getAllTemplateOptions } from './data/noteTemplates.js';
 import { getPendingCount, syncPendingRecordings } from './utils/offlineQueue.js';
 import { copyNoteToClipboard } from './utils/exportPDF.js';
@@ -1152,6 +1154,12 @@ Signature: ________________________
             <ReminderDashboard patients={patients} doctor={currentUser} />
           ) : activeSidebarTab === 'chats' ? (
             <ChatHistoryDashboard doctor={currentUser} patients={patients} />
+          ) : activeSidebarTab === 'appointments' ? (
+            <AppointmentQueue onSelectPatient={handleSelectPatient} />
+          ) : activeSidebarTab === 'schedule' ? (
+            <ScheduleEditor />
+          ) : activeSidebarTab === 'escalation' ? (
+            <EscalationRulesEditor />
           ) : activePatient ? (
             <div className="flex-1 flex flex-col min-h-0 relative">
               {/* Patient details toolbar */}
@@ -1846,7 +1854,7 @@ Signature: ________________________
         </main>
 
         {/* Interactive Sidebars: Insights (Vitals/Files) or Learn (ChatAssistant) */}
-        {activePatient && activeSidebarTab !== 'tasks' && rightSidebar && (
+        {activePatient && !['tasks', 'chats', 'appointments', 'schedule', 'escalation'].includes(activeSidebarTab) && rightSidebar && (
           <aside className="w-[380px] bg-white border-l border-slate-200 flex flex-col shrink-0 text-slate-805 h-full relative z-40 animate-fadeIn">
             {rightSidebar === 'learn' && (
               <ChatAssistant

@@ -8,8 +8,10 @@ const recordingSchema = new Schema(
       default: 'anonymous',
     },
     patientId: {
-      type: String, // Store as string to match patient IDs from file-based storage
-      required: false, // Optional - might not always have a patient linked
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Patient',
+      required: false,
+      default: null,
     },
     audioFile: {
       filename: String,
